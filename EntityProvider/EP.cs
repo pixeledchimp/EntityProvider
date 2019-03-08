@@ -11,21 +11,21 @@ namespace EntityProvider
         ///     Entity Provider singleton instance
         /// </summary>
         private static EP _instance = null;
-        
+
         /// <summary>
         ///     Path to implementation dll
         /// </summary>
         private string _dllLocation;
-        
+
         /// <summary>
         ///     Implementations namespace
         /// </summary>
-        private string _implementationsNamespace;
+        private NameSpace _implementationsNamespace;
 
         /// <summary>
         ///     Collection that stores singleton objects
         /// </summary>
-        private static readonly IDictionary<Type, object> Singletons = new Dictionary<Type, object>();
+        private static readonly IDictionary<NameSpace, IDictionary<Type, object>> Singletons = new Dictionary<NameSpace, IDictionary<Type, object>>();
 
         /// <summary>
         ///     Returns an instance of the passed ScopeType
@@ -37,10 +37,10 @@ namespace EntityProvider
         private T Get<T>(IDictionary<Type, object> collection = null, params object[] args)
         {
             // Return new instance if transient
-            if(collection == null) return New<T>(args);
-         
+            if (collection == null) return New<T>(args);
+
             // Find Object
-            if (collection.ContainsKey(typeof(T))) return (T) collection[typeof(T)];
+            if (collection.ContainsKey(typeof(T))) return (T)collection[typeof(T)];
             var obj = New<T>(args);
 
             // Add to collection if not exists
@@ -55,7 +55,7 @@ namespace EntityProvider
         private EP(string dllLocation, string implementationsNamespace)
         {
             _dllLocation = dllLocation;
-            _implementationsNamespace = implementationsNamespace;
+            _implementationsNamespace = new NameSpace(implementationsNamespace);
         }
 
         /// <summary>
@@ -88,7 +88,12 @@ namespace EntityProvider
         /// <returns></returns>
         public T GetSingleton<T>(params object[] args)
         {
-            return Get<T>(Singletons, args);
+            if (!Singletons.ContainsKey(_implementationsNamespace))
+            {
+                Singletons.Add(_implementationsNamespace, new Dictionary<Type, object>());
+            }
+
+            return Get<T>(Singletons[_implementationsNamespace], args);
         }
 
         /// <summary>
@@ -109,7 +114,7 @@ namespace EntityProvider
         /// <returns>The implementation class</returns>
         private Type GetModelTypeOf(Type wantedType)
         {
-            var modelTypes = GetTypesInNamespace(Assembly.LoadFrom(_dllLocation), _implementationsNamespace);
+            var modelTypes = GetTypesInNamespace(Assembly.LoadFrom(_dllLocation), _implementationsNamespace.ToString());
 
             foreach (var t in modelTypes)
             {
@@ -120,7 +125,7 @@ namespace EntityProvider
                 }
             }
 
-            throw new SystemException($"The requested Type {wantedType} has not been found.");
+            throw new NotImplementedException($"The requested Type [{wantedType}] has not been found.");
         }
 
         /// <summary>
@@ -137,8 +142,8 @@ namespace EntityProvider
                       .ToArray();
         }
 
-        public Scope GetScope() 
-            => new Scope(_dllLocation, _implementationsNamespace);
+        public Scope GetScope()
+            => new Scope(_dllLocation, _implementationsNamespace.ToString());
 
         public class Scope
         {
@@ -164,6 +169,26 @@ namespace EntityProvider
             ///     Collection that stores scoped objects
             /// </summary>
             private readonly IDictionary<Type, object> _scoped = new Dictionary<Type, object>();
+        }
+
+        private struct NameSpace : IEquatable<NameSpace>
+        {
+            private string _namespace;
+
+            public NameSpace(string @namespace)
+            {
+                _namespace = @namespace;
+            }
+
+            public override string ToString()
+            {
+                return _namespace.Trim();
+            }
+
+            public bool Equals(NameSpace other)
+            {
+                return ToString().Equals(other.ToString());
+            }
         }
     }
 }
