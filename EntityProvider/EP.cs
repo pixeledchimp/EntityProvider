@@ -23,11 +23,6 @@ namespace EntityProvider
         private string _implementationsNamespace;
 
         /// <summary>
-        ///     Collection that stores scoped objects
-        /// </summary>
-        private readonly IDictionary<Type, object> _scoped = new Dictionary<Type, object>();
-
-        /// <summary>
         ///     Collection that stores singleton objects
         /// </summary>
         private static readonly IDictionary<Type, object> Singletons = new Dictionary<Type, object>();
@@ -87,16 +82,7 @@ namespace EntityProvider
             return (T)Activator.CreateInstance(modelType, args);
         }
 
-        /// <summary>
-        ///     Returns a scoped instance of the object
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="args"></param>
-        /// <returns></returns>
-        public T GetScoped<T>(params object[] args)
-        {
-            return Get<T>(ScopeType.Scoped, args);
-        }
+        
 
         /// <summary>
         ///     Returns a singleton instance of the object
@@ -155,6 +141,32 @@ namespace EntityProvider
                       .ToArray();
         }
 
+
+        public Scope GetScope() 
+            => new Scope(_dllLocation, _implementationsNamespace);
+        
+
+        public class Scope : EP
+        {
+            public Scope(string dllLocation, string implementationNamespace) : base(dllLocation,implementationNamespace)
+            {}
+
+            /// <summary>
+            ///     Returns a scoped instance of the object
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="args"></param>
+            /// <returns></returns>
+            public T Get<T>(params object[] args)
+            {
+                return Get<T>(ScopeType.Scoped, args);
+            }
+
+            /// <summary>
+            ///     Collection that stores scoped objects
+            /// </summary>
+            private readonly IDictionary<Type, object> _scoped = new Dictionary<Type, object>();
+        }
     
         private enum ScopeType
         {
