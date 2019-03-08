@@ -23,11 +23,6 @@ namespace EntityProvider
         private string _implementationsNamespace;
 
         /// <summary>
-        ///     Collection that stores scoped objects
-        /// </summary>
-        private readonly IDictionary<Type, object> _scoped = new Dictionary<Type, object>();
-
-        /// <summary>
         ///     Collection that stores singleton objects
         /// </summary>
         private static readonly IDictionary<Type, object> Singletons = new Dictionary<Type, object>();
@@ -39,19 +34,17 @@ namespace EntityProvider
         /// <param name="s"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        private T Get<T>(ScopeType s = ScopeType.Transient, params object[] args)
+        private T Get<T>(IDictionary<Type, object> collection = null, params object[] args)
         {
             // Return new instance if transient
-            if(s == ScopeType.Transient) return New<T>(args);
-            // Select collection
-            var collection = s == ScopeType.Scoped
-                ? _scoped
-                : Singletons;
+            if(collection == null) return New<T>(args);
+         
             // Find Object
             if (collection.ContainsKey(typeof(T))) return (T) collection[typeof(T)];
             var obj = New<T>(args);
-            // Add to collection of not exists
-            if(s != ScopeType.Transient) collection.Add(typeof(T), obj);
+
+            // Add to collection if not exists
+            collection.Add(typeof(T), obj);
             // Return object
             return obj;
         }
@@ -66,7 +59,7 @@ namespace EntityProvider
         }
 
         /// <summary>
-        ///     Entity provider singleton instance provider
+        ///     Entity provider instance provider
         /// </summary>
         /// <returns></returns>
         public static EP GetProvider(string dllLocation, string implementationsNamespace)
@@ -88,17 +81,6 @@ namespace EntityProvider
         }
 
         /// <summary>
-        ///     Returns a scoped instance of the object
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="args"></param>
-        /// <returns></returns>
-        public T GetScoped<T>(params object[] args)
-        {
-            return Get<T>(ScopeType.Scoped, args);
-        }
-
-        /// <summary>
         ///     Returns a singleton instance of the object
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -106,7 +88,7 @@ namespace EntityProvider
         /// <returns></returns>
         public T GetSingleton<T>(params object[] args)
         {
-            return Get<T>(ScopeType.Singleton, args);
+            return Get<T>(Singletons, args);
         }
 
         /// <summary>
@@ -155,13 +137,33 @@ namespace EntityProvider
                       .ToArray();
         }
 
-    
-        private enum ScopeType
-        {
-            Transient,
-            Scoped,
-            Singleton
-        }
+        public Scope GetScope() 
+            => new Scope(_dllLocation, _implementationsNamespace);
 
+        public class Scope
+        {
+            private EP _sep;
+
+            public Scope(string dllLocation, string implementationNamespace)
+            {
+                _sep = GetProvider(dllLocation, implementationNamespace);
+            }
+
+            /// <summary>
+            ///     Returns a scoped instance of the object
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="args"></param>
+            /// <returns></returns>
+            public T Get<T>(params object[] args)
+            {
+                return _sep.Get<T>(_scoped, args);
+            }
+
+            /// <summary>
+            ///     Collection that stores scoped objects
+            /// </summary>
+            private readonly IDictionary<Type, object> _scoped = new Dictionary<Type, object>();
+        }
     }
 }
