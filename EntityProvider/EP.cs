@@ -64,7 +64,15 @@ namespace EntityProvider
         /// <returns></returns>
         public static EP GetProvider(string dllLocation, string implementationsNamespace)
         {
-            return new EP(dllLocation, implementationsNamespace);
+            try
+            {
+                return new EP(dllLocation, implementationsNamespace);
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
         }
 
         /// <summary>
@@ -88,12 +96,20 @@ namespace EntityProvider
         /// <returns></returns>
         public T GetSingleton<T>(params object[] args)
         {
-            if (!Singletons.ContainsKey(_implementationsNamespace))
+            try
             {
-                Singletons.Add(_implementationsNamespace, new Dictionary<Type, object>());
-            }
+                if (!Singletons.ContainsKey(_implementationsNamespace))
+                {
+                    Singletons.Add(_implementationsNamespace, new Dictionary<Type, object>());
+                }
 
-            return Get<T>(Singletons[_implementationsNamespace], args);
+                return Get<T>(Singletons[_implementationsNamespace], args);
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
         }
 
         /// <summary>
@@ -104,7 +120,15 @@ namespace EntityProvider
         /// <returns></returns>
         public T GetTransient<T>(params object[] args)
         {
-            return Get<T>(args: args);
+            try
+            {
+                return Get<T>(args: args);
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
         }
 
         /// <summary>
@@ -142,8 +166,22 @@ namespace EntityProvider
                       .ToArray();
         }
 
+        /// <summary>
+        ///     Returns a Scope
+        /// </summary>
+        /// <returns></returns>
         public Scope GetScope()
-            => new Scope(_dllLocation, _implementationsNamespace.ToString());
+        {
+            try
+            {
+                return new Scope(_dllLocation, _implementationsNamespace.ToString());
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
+        }
 
         public class Scope
         {
@@ -162,7 +200,15 @@ namespace EntityProvider
             /// <returns></returns>
             public T Get<T>(params object[] args)
             {
-                return _sep.Get<T>(_scoped, args);
+                try
+                {
+                    return _sep.Get<T>(_scoped, args);
+                }
+                catch (Exception e)
+                {
+
+                    throw e;
+                }
             }
 
             /// <summary>
