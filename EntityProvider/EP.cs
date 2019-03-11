@@ -10,12 +10,12 @@ namespace EntityProvider
         /// <summary>
         ///     Entity Provider singleton instance
         /// </summary>
-        private static EP _instance = null;
+        private readonly static EP _instance = null;
 
         /// <summary>
         ///     Path to implementation dll
         /// </summary>
-        private string _dllLocation;
+        private readonly string _dllLocation;
 
         /// <summary>
         ///     Implementations namespace
@@ -25,7 +25,7 @@ namespace EntityProvider
         /// <summary>
         ///     Collection that stores singleton objects
         /// </summary>
-        private static readonly IDictionary<NameSpace, IDictionary<Type, object>> Singletons = new Dictionary<NameSpace, IDictionary<Type, object>>();
+        private static readonly IDictionary<string, IDictionary<NameSpace, IDictionary<Type, object>>> Singletons = new Dictionary<string, IDictionary<NameSpace, IDictionary<Type, object>>>();
 
         /// <summary>
         ///     Returns an instance of the passed ScopeType
@@ -98,12 +98,17 @@ namespace EntityProvider
         {
             try
             {
-                if (!Singletons.ContainsKey(_implementationsNamespace))
+                if (!Singletons.ContainsKey(_dllLocation))
                 {
-                    Singletons.Add(_implementationsNamespace, new Dictionary<Type, object>());
+                    Singletons.Add(_dllLocation, new Dictionary<NameSpace, IDictionary<Type, object>>());
                 }
 
-                return Get<T>(Singletons[_implementationsNamespace], args);
+                if (!Singletons[_dllLocation].ContainsKey(_implementationsNamespace))
+                {
+                    Singletons[_dllLocation].Add(_implementationsNamespace, new Dictionary<Type, object>());
+                }
+
+                return Get<T>(Singletons[_dllLocation][_implementationsNamespace], args);
             }
             catch (Exception e)
             {
