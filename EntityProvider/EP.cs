@@ -10,12 +10,12 @@ namespace EntityProvider
         /// <summary>
         ///     Entity Provider singleton instance
         /// </summary>
-        private static EP _instance = null;
+        private readonly static EP _instance = null;
 
         /// <summary>
         ///     Path to implementation dll
         /// </summary>
-        private string _dllLocation;
+        private readonly string _dllLocation;
 
         /// <summary>
         ///     Implementations namespace
@@ -25,7 +25,7 @@ namespace EntityProvider
         /// <summary>
         ///     Collection that stores singleton objects
         /// </summary>
-        private static readonly IDictionary<NameSpace, IDictionary<Type, object>> Singletons = new Dictionary<NameSpace, IDictionary<Type, object>>();
+        private static readonly IDictionary<string, IDictionary<NameSpace, IDictionary<Type, object>>> Singletons = new Dictionary<string, IDictionary<NameSpace, IDictionary<Type, object>>>();
 
         /// <summary>
         ///     Returns an instance of the passed ScopeType
@@ -64,7 +64,15 @@ namespace EntityProvider
         /// <returns></returns>
         public static EP GetProvider(string dllLocation, string implementationsNamespace)
         {
-            return new EP(dllLocation, implementationsNamespace);
+            try
+            {
+                return new EP(dllLocation, implementationsNamespace);
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
         }
 
         /// <summary>
@@ -88,12 +96,25 @@ namespace EntityProvider
         /// <returns></returns>
         public T GetSingleton<T>(params object[] args)
         {
-            if (!Singletons.ContainsKey(_implementationsNamespace))
+            try
             {
-                Singletons.Add(_implementationsNamespace, new Dictionary<Type, object>());
-            }
+                if (!Singletons.ContainsKey(_dllLocation))
+                {
+                    Singletons.Add(_dllLocation, new Dictionary<NameSpace, IDictionary<Type, object>>());
+                }
 
-            return Get<T>(Singletons[_implementationsNamespace], args);
+                if (!Singletons[_dllLocation].ContainsKey(_implementationsNamespace))
+                {
+                    Singletons[_dllLocation].Add(_implementationsNamespace, new Dictionary<Type, object>());
+                }
+
+                return Get<T>(Singletons[_dllLocation][_implementationsNamespace], args);
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
         }
 
         /// <summary>
@@ -104,7 +125,15 @@ namespace EntityProvider
         /// <returns></returns>
         public T GetTransient<T>(params object[] args)
         {
-            return Get<T>(args: args);
+            try
+            {
+                return Get<T>(args: args);
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
         }
 
         /// <summary>
@@ -142,8 +171,22 @@ namespace EntityProvider
                       .ToArray();
         }
 
+        /// <summary>
+        ///     Returns a Scope
+        /// </summary>
+        /// <returns></returns>
         public Scope GetScope()
-            => new Scope(_dllLocation, _implementationsNamespace.ToString());
+        {
+            try
+            {
+                return new Scope(_dllLocation, _implementationsNamespace.ToString());
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
+        }
 
         public class Scope
         {
@@ -162,7 +205,15 @@ namespace EntityProvider
             /// <returns></returns>
             public T Get<T>(params object[] args)
             {
-                return _sep.Get<T>(_scoped, args);
+                try
+                {
+                    return _sep.Get<T>(_scoped, args);
+                }
+                catch (Exception e)
+                {
+
+                    throw e;
+                }
             }
 
             /// <summary>
