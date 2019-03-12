@@ -25,7 +25,7 @@ namespace YourNamespace
 
 ```
 
-### Instantiate an interface
+### Instantiate an entity
 ```
 ...
 var _ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests"); // Get an instance if the EntityProvider
@@ -34,7 +34,7 @@ var implementedModel = _ep.GetTransient<IInterfaceModel>(); // Get a fresh insta
 
 ```
 
-### Pass arguments to instance constructor
+### Pass arguments to entity constructor
 ```
 
 var dontPanic = "Dont' Panic!";
