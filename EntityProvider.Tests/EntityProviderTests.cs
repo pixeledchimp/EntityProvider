@@ -111,7 +111,7 @@ namespace EntityProvider.Tests
         [Fact]
         public void EntityProvider_SingletonConfigurationTests()
         {
-            var conf = "<EP><Singleton value=\"IInterfaceModel\"/></EP>";
+            var conf = "<EP xmlns:epns=\"EntityProvider.Tests\"><epns:Singleton value=\"IInterfaceModel\"/></EP>";
 
 
              // Singleton entities are always the same object
@@ -144,7 +144,7 @@ namespace EntityProvider.Tests
         [Fact]
         public void EntityProvider_BadSingletonConfigurationTests()
         {
-            var conf = "<EP><Singleton value=\"IInterfaceModelX\"/></EP>";
+            var conf = "<EP xmlns:epns=\"EntityProvider.Tests\"><epns:Singleton value=\"IInterfaceModelX\"/></EP>";
             var aProvider = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
             Assert.Throws<TypeAccessException>(() => aProvider.GetSingleton<IInterfaceModel>());
         }

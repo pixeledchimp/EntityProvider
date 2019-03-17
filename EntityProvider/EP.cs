@@ -17,8 +17,9 @@ namespace EntityProvider
 
         /// <summary>
         ///     Types for Singleton
+        ///     Dictionary of 
         /// </summary>
-        private static IList<string> SingletonTypes;
+        private static IDictionary<string, IEnumerable<string>> SingletonTypes;
 
         /// <summary>
         ///     Path to implementation dll
@@ -62,11 +63,14 @@ namespace EntityProvider
         /// </summary>
         private EP(string dllLocation, string implementationsNamespace, string xmlConfigurationString = null)
         {
+            SingletonTypes = new Dictionary<string, IEnumerable<string>>();
+
             // Config the Types
             if(xmlConfigurationString != null)
             {
                 SingletonTypes = FillTypesConfLists(xmlConfigurationString, "Singleton");
             }
+
             _dllLocation = dllLocation;
             _implementationsNamespace = new NameSpace(implementationsNamespace);
         }
@@ -95,11 +99,16 @@ namespace EntityProvider
         /// <param name="xmlConfigurationString"></param>
         /// <param name="InstatiationType"></param>
         /// <returns></returns>
-        private static IList<string> FillTypesConfLists(string xmlConfigurationString, string InstatiationType)
+        private static IDictionary<string, IEnumerable<string>> FillTypesConfLists(string xmlConfigurationString, string InstatiationType)
         {
             XElement xDocConf  = XDocument.Parse(xmlConfigurationString).Root;
-            var types = xDocConf.Descendants(InstatiationType).Select(n => n.Attribute("value").Value).ToList() ?? new List<string>();
-            return types;
+            var t = xDocConf
+                .Descendants()
+               .GroupBy( n => n.GetNamespaceOfPrefix("epns").ToString())
+               .ToDictionary( g => g.Key, g => g.Select( ge => ge.Attribute("value").Value )) 
+               ?? new Dictionary<string, IEnumerable<string>>();
+
+            return t;
         }
 
         /// <summary>
@@ -124,7 +133,7 @@ namespace EntityProvider
         /// <returns></returns>
         public T New<T>(params object[] args)
         {
-            if(InSingletonTypes<T>())
+            if(SingletonTypes.Any() && InSingletonTypes<T>())
                 return GetSingleton<T>(args);
 
             return GetTransient<T>(args);
@@ -137,7 +146,8 @@ namespace EntityProvider
         /// <returns></returns>
         private bool InSingletonTypes<T>()
         {
-            return SingletonTypes.Contains(typeof(T).Name);
+            return SingletonTypes.ContainsKey(typeof(T).Namespace) 
+                && SingletonTypes[typeof(T).Namespace].Contains(typeof(T).Name);
         }
 
         /// <summary>
@@ -283,6 +293,9 @@ namespace EntityProvider
             private readonly IDictionary<Type, object> _scoped = new Dictionary<Type, object>();
         }
 
+        /// <summary>
+        ///     Represents a Type namespace
+        /// </summary>
         private struct NameSpace : IEquatable<NameSpace>
         {
             private string _namespace;
