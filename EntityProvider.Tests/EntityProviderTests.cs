@@ -107,5 +107,46 @@ namespace EntityProvider.Tests
             var noImplementationEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.NotImplementedEntities");
             Assert.Throws<NotImplementedException>(() => noImplementationEp.GetSingleton<IInterfaceModel>());
         }
+
+        [Fact]
+        public void EntityProvider_SingletonConfigurationTests()
+        {
+            var conf = "<EP><Singleton value=\"IInterfaceModel\"/></EP>";
+
+
+             // Singleton entities are always the same object
+            var singletonObject = _ep.GetSingleton<IInterfaceModel>();
+            var singletonSame = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf).New<IInterfaceModel>();
+            {
+                var singletonObjectIndifferentScope = _ep.New<IInterfaceModel>();
+
+                // Assert
+
+                // Singletons of same
+                Assert.Equal(singletonObject, singletonSame);
+
+                // Singletons gotten in different scopes are the same object
+                Assert.Equal(singletonObject, singletonObjectIndifferentScope);
+            }
+
+            // EntityProviders must return different singletons from different namespaces
+            var otherEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.New", conf);
+
+            var singletonObjectNew = otherEp.New<IInterfaceModel>();
+
+            Assert.NotEqual(singletonObject, singletonObjectNew);
+
+            // Entity providers cannot provide Singletons from Namespaces where there is no imlementation
+            var noImplementationEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.NotImplementedEntities", conf);
+            Assert.Throws<NotImplementedException>(() => noImplementationEp.New<IInterfaceModel>());
+        }
+
+        [Fact]
+        public void EntityProvider_BadSingletonConfigurationTests()
+        {
+            var conf = "<EP><Singleton value=\"IInterfaceModelX\"/></EP>";
+            var aProvider = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
+            Assert.Throws<TypeAccessException>(() => aProvider.GetSingleton<IInterfaceModel>());
+        }
     }
 }

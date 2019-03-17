@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace EntityProvider
 {
@@ -11,6 +14,11 @@ namespace EntityProvider
         ///     Entity Provider singleton instance
         /// </summary>
         private readonly static EP _instance = null;
+
+        /// <summary>
+        ///     Types for Singleton
+        /// </summary>
+        private static IList<string> SingletonTypes;
 
         /// <summary>
         ///     Path to implementation dll
@@ -37,11 +45,11 @@ namespace EntityProvider
         private T Get<T>(IDictionary<Type, object> collection = null, params object[] args)
         {
             // Return new instance if transient
-            if (collection == null) return New<T>(args);
+            if (collection == null) return GetNewInstance<T>(args);
 
             // Find Object
             if (collection.ContainsKey(typeof(T))) return (T)collection[typeof(T)];
-            var obj = New<T>(args);
+            var obj = GetNewInstance<T>(args);
 
             // Add to collection if not exists
             collection.Add(typeof(T), obj);
@@ -52,8 +60,13 @@ namespace EntityProvider
         /// <summary>
         ///     Entity provider private constructor
         /// </summary>
-        private EP(string dllLocation, string implementationsNamespace)
+        private EP(string dllLocation, string implementationsNamespace, string xmlConfigurationString = null)
         {
+            // Config the Types
+            if(xmlConfigurationString != null)
+            {
+                SingletonTypes = FillTypesConfLists(xmlConfigurationString, "Singleton");
+            }
             _dllLocation = dllLocation;
             _implementationsNamespace = new NameSpace(implementationsNamespace);
         }
@@ -62,11 +75,12 @@ namespace EntityProvider
         ///     Entity provider instance provider
         /// </summary>
         /// <returns></returns>
-        public static EP GetProvider(string dllLocation, string implementationsNamespace)
+        public static EP GetProvider(string dllLocation, string implementationsNamespace, string xmlConfigurationString = null)
         {
+
             try
             {
-                return new EP(dllLocation, implementationsNamespace);
+                return new EP(dllLocation, implementationsNamespace, xmlConfigurationString);
             }
             catch (Exception e)
             {
@@ -76,16 +90,54 @@ namespace EntityProvider
         }
 
         /// <summary>
+        ///     Returns a list of Types of the instatiationType passed from the configurationXML
+        /// </summary>
+        /// <param name="xmlConfigurationString"></param>
+        /// <param name="InstatiationType"></param>
+        /// <returns></returns>
+        private static IList<string> FillTypesConfLists(string xmlConfigurationString, string InstatiationType)
+        {
+            XElement xDocConf  = XDocument.Parse(xmlConfigurationString).Root;
+            var types = xDocConf.Descendants(InstatiationType).Select(n => n.Attribute("value").Value).ToList() ?? new List<string>();
+            return types;
+        }
+
+        /// <summary>
         ///     Returns an instance of the Implementation
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="args"></param>
         /// <returns></returns>
-        private T New<T>(params object[] args)
+        private T GetNewInstance<T>(params object[] args)
         {
             var wantedType = typeof(T);
             var modelType = GetModelTypeOf(wantedType);
             return (T)Activator.CreateInstance(modelType, args);
+        }
+
+        /// <summary>
+        ///     Returns a Singleton or Transient instance depending on the configuration passed
+        ///     Falling back to transient if no configuration given
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public T New<T>(params object[] args)
+        {
+            if(InSingletonTypes<T>())
+                return GetSingleton<T>(args);
+
+            return GetTransient<T>(args);
+        }
+
+        /// <summary>
+        ///     Tells if Type is in the collection destinated to be singleton
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        private bool InSingletonTypes<T>()
+        {
+            return SingletonTypes.Contains(typeof(T).Name);
         }
 
         /// <summary>
@@ -98,6 +150,11 @@ namespace EntityProvider
         {
             try
             {
+                if(SingletonTypes.Any() && !InSingletonTypes<T>())
+                {
+                    throw new TypeAccessException("The requested Is not meant to be singleton. Please add it to your configuration if you want it so.");
+                }
+
                 if (!Singletons.ContainsKey(_dllLocation))
                 {
                     Singletons.Add(_dllLocation, new Dictionary<NameSpace, IDictionary<Type, object>>());
@@ -109,6 +166,10 @@ namespace EntityProvider
                 }
 
                 return Get<T>(Singletons[_dllLocation][_implementationsNamespace], args);
+            }
+            catch (TypeAccessException)
+            {
+                throw;
             }
             catch (Exception e)
             {

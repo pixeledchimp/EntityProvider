@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyVersion>1.0.0.2</AssemblyVersion>
+    <FileVersion>1.0.0.2</FileVersion>
+    <Authors>Jairo E. Vengoechea R.</Authors>
+    <PackageLicenseUrl>http://www.apache.org/licenses/</PackageLicenseUrl>
+    <Copyright>© 2019 Jairo Enrique Vengoechea Rueda</Copyright>
   </PropertyGroup>
 
 </Project>
