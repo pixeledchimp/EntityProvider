@@ -1,6 +1,4 @@
-﻿using EntityProvider.Tests;
-
-namespace EntityProvider.Tests
+﻿namespace EntityProvider.Tests
 {
     public class ImplementedModel : IInterfaceModel
     {
