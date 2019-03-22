@@ -111,14 +111,14 @@ namespace EntityProvider.Tests
         [Fact]
         public void EntityProvider_SingletonConfigurationTests()
         {
-            var conf = "<EP xmlns:epns=\"EntityProvider.Tests\"><epns:Singleton value=\"IInterfaceModel\"/></EP>";
-
+            var conf = "<EP><Singletons xmlns:epns=\"EntityProvider.Tests\"><epns:Type>IInterfaceModel</epns:Type></Singletons></EP>";
+            var localEpWithSingletonsConf = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
 
              // Singleton entities are always the same object
             var singletonObject = _ep.GetSingleton<IInterfaceModel>();
-            var singletonSame = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf).New<IInterfaceModel>();
+            var singletonSame = localEpWithSingletonsConf.New<IInterfaceModel>();
             {
-                var singletonObjectIndifferentScope = _ep.New<IInterfaceModel>();
+                var singletonObjectIndifferentScope = localEpWithSingletonsConf.New<IInterfaceModel>();
 
                 // Assert
 
@@ -144,9 +144,18 @@ namespace EntityProvider.Tests
         [Fact]
         public void EntityProvider_BadSingletonConfigurationTests()
         {
-            var conf = "<EP xmlns:epns=\"EntityProvider.Tests\"><epns:Singleton value=\"IInterfaceModelX\"/></EP>";
+            var conf = "<EP><Singletons xmlns:epns=\"EntityProvider.Tests\"><epns:Type>IInterfaceModelX</epns:Type></Singletons></EP>";
             var aProvider = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
             Assert.Throws<TypeAccessException>(() => aProvider.GetSingleton<IInterfaceModel>());
+        }
+
+        [Fact]
+        public void EntityProvider_StrongMapsTest()
+        {
+            var conf = "<EP><StrongMaps><Map implementation=\"EntityProvider.Tests.ImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
+            var Ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
+            var impl = Ep.New<IInterfaceModel>();
+            Assert.NotNull(impl);
         }
     }
 }
