@@ -136,3 +136,12 @@ var conf = "<EP xmlns:epns=\"EntityProvider.Tests\"><epns:Singleton value=\"IInt
             var aProvider = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
             Assert.Throws<TypeAccessException>(() => aProvider.GetSingleton<IInterfaceModel>());
 ```
+
+
+### StrongMaps
+By providing a strong mapping of the types you'd be able to keep more than one implementation of the requested type under the same namespace and define which one will be used.
+```
+
+var conf = "<EP><StrongMaps><Map implementation=\"EntityProvider.Tests.ImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
+var Ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
+```
