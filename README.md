@@ -102,7 +102,7 @@ Assert.Throws<NotImplementedException>(() => noImplementationEp.GetSingleton<IIn
 ### Config
 Define in the configuration xml the namespace and types to be used as Singleton. Any attempt of creating a singleton that is not in that list will result in a TypeAccessException
 ```
-var conf = "<EP xmlns:epns=\"EntityProvider.Tests\"><epns:Singleton value=\"IInterfaceModel\"/></EP>";
+var conf = "<EP><Singletons xmlns:epns=\"EntityProvider.Tests\"><epns:Type>IInterfaceModel</epns:Type></Singletons></EP>";
 
 
              // Singleton entities are always the same object
