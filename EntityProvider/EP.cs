@@ -19,12 +19,33 @@ namespace EntityProvider
         ///     Types for Singleton
         ///     Dictionary of 
         /// </summary>
-        private static IDictionary<string, IEnumerable<string>> SingletonTypes;
+        private IDictionary<string, IEnumerable<string>> _singletonTypes;
 
         /// <summary>
         ///     Path to implementation dll
         /// </summary>
         private readonly string _dllLocation;
+
+        /// <summary>
+        ///     Name of the TAG that contains the EntityProvider configuration options
+        /// </summary>
+        private const string _EP = "EP";
+
+        /// <summary>
+        ///     Node that contains the Types to be instantiated a singletons
+        /// </summary>
+        private const string _Singletons = "Singletons";
+
+        /// <summary>
+        ///     Name of the XML TAG that represents a type
+        /// </summary>
+        private const string _Type = "Type";
+
+        /// <summary>
+        ///     epns: Entity provider namesspae
+        ///     Used to set the xml namespace in Singletons
+        /// </summary>
+        private const string _epns = "epns";
 
         /// <summary>
         ///     Implementations namespace
@@ -34,7 +55,12 @@ namespace EntityProvider
         /// <summary>
         ///     Collection that stores singleton objects
         /// </summary>
-        private static readonly IDictionary<string, IDictionary<NameSpace, IDictionary<Type, object>>> Singletons = new Dictionary<string, IDictionary<NameSpace, IDictionary<Type, object>>>();
+        private static readonly IDictionary<string, IDictionary<NameSpace, IDictionary<Type, object>>> _singletons = new Dictionary<string, IDictionary<NameSpace, IDictionary<Type, object>>>();
+
+        /// <summary>
+        ///     StrongMaps
+        /// </summary>
+        private readonly IDictionary<string, string> _strongMaps;
 
         /// <summary>
         ///     Returns an instance of the passed ScopeType
@@ -63,16 +89,36 @@ namespace EntityProvider
         /// </summary>
         private EP(string dllLocation, string implementationsNamespace, string xmlConfigurationString = null)
         {
-            SingletonTypes = new Dictionary<string, IEnumerable<string>>();
-
+            _singletonTypes = new Dictionary<string, IEnumerable<string>>();
+            
             // Config the Types
             if(xmlConfigurationString != null)
             {
-                SingletonTypes = FillTypesConfLists(xmlConfigurationString, "Singleton");
+                var xroot = XDocument.Parse(xmlConfigurationString).Root;
+                if(xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
+                {
+                    throw new ArgumentException("The provided configuration does not seem to have a EP configuration");
+                }
+                _singletonTypes = SetTypesForSingleton(xroot);
+                _strongMaps = SetStrongMaps(xroot);
             }
 
             _dllLocation = dllLocation;
             _implementationsNamespace = new NameSpace(implementationsNamespace);
+        }
+
+        /// <summary>
+        ///     Defines the strongMaps
+        /// </summary>
+        /// <param name="xroot"></param>
+        /// <returns></returns>
+        private IDictionary<string, string> SetStrongMaps(XElement xroot)
+        {
+            return xroot
+                .Descendants("StrongMaps")
+                .Descendants()
+                .Where( d => d.Name.LocalName == "Map")
+                .ToDictionary( m => m.Value, m => m.Attribute("implementation").Value);
         }
 
         /// <summary>
@@ -99,16 +145,13 @@ namespace EntityProvider
         /// <param name="xmlConfigurationString"></param>
         /// <param name="InstatiationType"></param>
         /// <returns></returns>
-        private static IDictionary<string, IEnumerable<string>> FillTypesConfLists(string xmlConfigurationString, string InstatiationType)
+        private static IDictionary<string, IEnumerable<string>> SetTypesForSingleton(XElement epRoot)
         {
-            XElement xDocConf  = XDocument.Parse(xmlConfigurationString).Root;
-            var t = xDocConf
-                .Descendants()
-               .GroupBy( n => n.GetNamespaceOfPrefix("epns").ToString())
-               .ToDictionary( g => g.Key, g => g.Select( ge => ge.Attribute("value").Value )) 
+            return epRoot
+                .Descendants(_Singletons)
+                .Descendants().Where( d => d.Name.LocalName == _Type).GroupBy( n => n.GetNamespaceOfPrefix(_epns).ToString())
+               .ToDictionary( g => g.Key, g => g.Select( ge => ge.Value )) 
                ?? new Dictionary<string, IEnumerable<string>>();
-
-            return t;
         }
 
         /// <summary>
@@ -133,7 +176,7 @@ namespace EntityProvider
         /// <returns></returns>
         public T New<T>(params object[] args)
         {
-            if(SingletonTypes.Any() && InSingletonTypes<T>())
+            if(_singletonTypes.Count > 0 && InSingletonTypes<T>())
                 return GetSingleton<T>(args);
 
             return GetTransient<T>(args);
@@ -146,8 +189,8 @@ namespace EntityProvider
         /// <returns></returns>
         private bool InSingletonTypes<T>()
         {
-            return SingletonTypes.ContainsKey(typeof(T).Namespace) 
-                && SingletonTypes[typeof(T).Namespace].Contains(typeof(T).Name);
+            return _singletonTypes.ContainsKey(typeof(T).Namespace) 
+                && _singletonTypes[typeof(T).Namespace].Contains(typeof(T).Name);
         }
 
         /// <summary>
@@ -160,22 +203,22 @@ namespace EntityProvider
         {
             try
             {
-                if(SingletonTypes.Any() && !InSingletonTypes<T>())
+                if(_singletonTypes.Any() && !InSingletonTypes<T>())
                 {
                     throw new TypeAccessException("The requested Is not meant to be singleton. Please add it to your configuration if you want it so.");
                 }
 
-                if (!Singletons.ContainsKey(_dllLocation))
+                if (!_singletons.ContainsKey(_dllLocation))
                 {
-                    Singletons.Add(_dllLocation, new Dictionary<NameSpace, IDictionary<Type, object>>());
+                    _singletons.Add(_dllLocation, new Dictionary<NameSpace, IDictionary<Type, object>>());
                 }
 
-                if (!Singletons[_dllLocation].ContainsKey(_implementationsNamespace))
+                if (!_singletons[_dllLocation].ContainsKey(_implementationsNamespace))
                 {
-                    Singletons[_dllLocation].Add(_implementationsNamespace, new Dictionary<Type, object>());
+                    _singletons[_dllLocation].Add(_implementationsNamespace, new Dictionary<Type, object>());
                 }
 
-                return Get<T>(Singletons[_dllLocation][_implementationsNamespace], args);
+                return Get<T>(_singletons[_dllLocation][_implementationsNamespace], args);
             }
             catch (TypeAccessException)
             {
@@ -215,6 +258,17 @@ namespace EntityProvider
         private Type GetModelTypeOf(Type wantedType)
         {
             var modelTypes = GetTypesInNamespace(Assembly.LoadFrom(_dllLocation), _implementationsNamespace.ToString());
+            
+            if(_strongMaps != null && _strongMaps.Count > 0)
+            {
+                var wanterTypeString = wantedType.ToString();
+
+                if (_strongMaps.ContainsKey(wanterTypeString))
+                {
+                    var foundType =  modelTypes.FirstOrDefault(t => t.FullName == _strongMaps[wantedType.ToString()]);
+                    if(foundType != null) return foundType;
+                }
+            }
 
             foreach (var t in modelTypes)
             {
