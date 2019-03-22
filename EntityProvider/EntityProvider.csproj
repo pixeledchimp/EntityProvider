@@ -2,14 +2,19 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyVersion>1.0.3.0</AssemblyVersion>
-    <FileVersion>1.0.3.0</FileVersion>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
     <Authors>Jairo E. Vengoechea R.</Authors>
     <PackageLicenseUrl>http://www.apache.org/licenses/</PackageLicenseUrl>
     <Copyright>© 2019 Jairo Enrique Vengoechea Rueda</Copyright>
-    <Version>1.0.3</Version>
+    <Version>1.2.0.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageProjectUrl>https://github.com/pixeledchimp/EntityProvider</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/pixeledchimp/EntityProvider</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <Description>EntityProvider is a DI helper class that aims to simplify cluttered and crowded constructors by the use of organization and configuration.</Description>
+    <PackageReleaseNotes>Adding Strong mapping for types in configuration xml</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>
