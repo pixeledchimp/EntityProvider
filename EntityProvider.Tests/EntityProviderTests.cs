@@ -152,10 +152,10 @@ namespace EntityProvider.Tests
         [Fact]
         public void EntityProvider_StrongMapsTest()
         {
-            var conf = "<EP><StrongMaps><Map implementation=\"EntityProvider.Tests.ImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
+            var conf = "<EP><StrongMaps><Map implementation=\"EntityProvider.Tests.OtherImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
             var Ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
             var impl = Ep.New<IInterfaceModel>();
-            Assert.NotNull(impl);
+            Assert.Equal("EntityProvider.Tests.OtherImplementedModel", impl.SomeProp1);
         }
     }
 }
