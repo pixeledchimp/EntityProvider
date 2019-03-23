@@ -34,6 +34,30 @@ namespace EntityProvider
             }
         }
 
+        /// <summary>
+        ///     Full featured conf
+        /// </summary>
+        /// <param name="conf"></param>
+        public EP(string conf)
+        {
+            var xroot = XDocument.Parse(conf).Root;
+
+            if(xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
+            {
+                throw new ArgumentException("The provided configuration does not seem to have a EP configuration");
+            }
+
+            if (!xroot.Attributes().Any( a => a.Name.LocalName == _epns) || !xroot.Attributes().Any( a => a.Name.LocalName == _dll ))
+            {
+                throw new ArgumentException("The provided configuration does not seem to be a full feature EP configuration");
+            }
+
+            _dllLocation = xroot.Attribute(_dll).Value;
+            _implementationsNamespace = new NameSpace(xroot.GetNamespaceOfPrefix(_epns).NamespaceName);
+            _singletonTypes = SetTypesForSingleton(xroot);
+            _strongMaps = SetStrongMaps(xroot);
+        }
+
         #endregion
 
         #region Fields
@@ -74,6 +98,11 @@ namespace EntityProvider
         ///     Used to set the xml namespace in Singletons
         /// </summary>
         private const string _epns = "epns";
+
+        /// <summary>
+        ///     Name of attribute to define the dll filename path
+        /// </summary>
+        private const string _dll = "dll";
 
         /// <summary>
         ///     Implementations namespace
@@ -193,10 +222,27 @@ namespace EntityProvider
         /// <returns></returns>
         public static EP GetProvider(string dllLocation, string implementationsNamespace, string xmlConfigurationString = null)
         {
-
             try
             {
                 return new EP(dllLocation, implementationsNamespace, xmlConfigurationString);
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
+        }
+
+        /// <summary>
+        ///     Full featured conf provider
+        /// </summary>
+        /// <param name="conf"></param>
+        /// <returns></returns>
+        public static EP GetProvider(string conf)
+        {
+            try
+            {
+                return new EP(conf);
             }
             catch (Exception e)
             {
