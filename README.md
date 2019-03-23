@@ -145,3 +145,10 @@ By providing a strong mapping of the types you'd be able to keep more than one i
 var conf = "<EP><StrongMaps><Map implementation=\"EntityProvider.Tests.ImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
 var Ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
 ```
+### Full featured conf xml
+```
+var conf = "<EP xmlns:epns=\"EntityProvider.Tests\" dll=\"EntityProvider.Tests.dll\"><StrongMaps><Map implementation=\"OtherImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
+var Ep = EP.GetProvider(conf);
+var impl = Ep.New<IInterfaceModel>();
+Assert.Equal("EntityProvider.Tests.OtherImplementedModel", impl.SomeProp1);
+```
