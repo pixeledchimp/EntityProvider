@@ -11,6 +11,7 @@ namespace EntityProvider
     public sealed class EP
     {
         #region Constructor
+
         /// <summary>
         ///     Entity provider private constructor
         /// </summary>
@@ -32,9 +33,11 @@ namespace EntityProvider
                 _strongMaps = SetStrongMaps(xroot);
             }
         }
+
         #endregion
 
         #region Fields
+
         /// <summary>
         ///     Entity Provider singleton instance
         /// </summary>
@@ -76,11 +79,6 @@ namespace EntityProvider
         ///     Implementations namespace
         /// </summary>
         private NameSpace _implementationsNamespace;
-
-        /// <summary>
-        ///     The assembly that the EP refers to
-        /// </summary>
-        private Assembly _loadedAssembly;
         
         /// <summary>
         ///     Collection that stores singleton objects
