@@ -157,5 +157,14 @@ namespace EntityProvider.Tests
             var impl = Ep.New<IInterfaceModel>();
             Assert.Equal("EntityProvider.Tests.OtherImplementedModel", impl.SomeProp1);
         }
+
+        [Fact]
+        public void EntityProvider_FullyFeaturedConf()
+        {
+            var conf = "<EP xmlns:epns=\"EntityProvider.Tests\" dll=\"EntityProvider.Tests.dll\"><StrongMaps><Map implementation=\"OtherImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
+            var Ep = EP.GetProvider(conf);
+            var impl = Ep.New<IInterfaceModel>();
+            Assert.Equal("EntityProvider.Tests.OtherImplementedModel", impl.SomeProp1);
+        }
     }
 }
