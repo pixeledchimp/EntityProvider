@@ -161,10 +161,35 @@ namespace EntityProvider.Tests
         [Fact]
         public void EntityProvider_FullyFeaturedConf()
         {
-            var conf = "<EP xmlns:epns=\"EntityProvider.Tests\" dll=\"EntityProvider.Tests.dll\"><StrongMaps><Map implementation=\"OtherImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
+            var conf = "<EP xmlns:epns=\"EntityProvider.Tests\" dll=\"EntityProvider.Tests.dll\"><StrongMaps><Map implementation=\"ImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps><Singletons><epns:Type>IInterfaceModel</epns:Type></Singletons></EP>";
             var Ep = EP.GetProvider(conf);
             var impl = Ep.New<IInterfaceModel>();
-            Assert.Equal("EntityProvider.Tests.OtherImplementedModel", impl.SomeProp1);
+            
+             // Singleton entities are always the same object
+            var singletonObject = _ep.GetSingleton<IInterfaceModel>();
+            var singletonSame = Ep.New<IInterfaceModel>();
+            {
+                var singletonObjectIndifferentScope = Ep.New<IInterfaceModel>();
+
+                // Assert
+
+                // Singletons of same
+                Assert.Equal(singletonObject, singletonSame);
+
+                // Singletons gotten in different scopes are the same object
+                Assert.Equal(singletonObject, singletonObjectIndifferentScope);
+            }
+
+            // EntityProviders must return different singletons from different namespaces
+            var otherEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.New", conf);
+
+            var singletonObjectNew = otherEp.New<IInterfaceModel>();
+
+            Assert.NotEqual(singletonObject, singletonObjectNew);
+
+            // Entity providers cannot provide Singletons from Namespaces where there is no imlementation
+            var noImplementationEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.NotImplementedEntities", conf);
+            Assert.Throws<NotImplementedException>(() => noImplementationEp.New<IInterfaceModel>());
         }
     }
 }
