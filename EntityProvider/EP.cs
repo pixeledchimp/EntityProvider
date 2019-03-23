@@ -8,8 +8,36 @@ using System.Xml.Linq;
 
 namespace EntityProvider
 {
-    public class EP
+    public sealed class EP
     {
+        #region Constructor
+
+        /// <summary>
+        ///     Entity provider private constructor
+        /// </summary>
+        private EP(string dllLocation, string implementationsNamespace, string xmlConfigurationString = null)
+        {
+            _singletonTypes = new Dictionary<string, IEnumerable<string>>();
+            _dllLocation = dllLocation;
+            _implementationsNamespace = new NameSpace(implementationsNamespace);
+
+            // Config the Types
+            if(xmlConfigurationString != null)
+            {
+                var xroot = XDocument.Parse(xmlConfigurationString).Root;
+                if(xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
+                {
+                    throw new ArgumentException("The provided configuration does not seem to have a EP configuration");
+                }
+                _singletonTypes = SetTypesForSingleton(xroot);
+                _strongMaps = SetStrongMaps(xroot);
+            }
+        }
+
+        #endregion
+
+        #region Fields
+
         /// <summary>
         ///     Entity Provider singleton instance
         /// </summary>
@@ -51,7 +79,7 @@ namespace EntityProvider
         ///     Implementations namespace
         /// </summary>
         private NameSpace _implementationsNamespace;
-
+        
         /// <summary>
         ///     Collection that stores singleton objects
         /// </summary>
@@ -62,6 +90,57 @@ namespace EntityProvider
         /// </summary>
         private readonly IDictionary<string, string> _strongMaps;
 
+        #endregion
+
+        #region PrivateInterface
+        
+        /// <summary>
+        ///     Returns the Type of the Interface implementation class
+        /// </summary>
+        /// <param name="wantedType">The interface type</param>
+        /// <returns>The implementation class</returns>
+        private Type GetModelTypeOf(Type wantedType)
+        {
+            var modelTypes = GetTypesInNamespace(Assembly.LoadFrom(_dllLocation), _implementationsNamespace.ToString());
+            
+            if(_strongMaps?.Count > 0)
+            {
+                var wanterTypeString = wantedType.ToString();
+
+                if (_strongMaps.ContainsKey(wanterTypeString))
+                {
+                    var foundType =  modelTypes.FirstOrDefault(t => t.FullName == _strongMaps[wantedType.ToString()]);
+                    if(foundType != null) return foundType;
+                }
+            }
+
+            foreach (var t in modelTypes)
+            {
+                // Looking for an implementation of the requested type and not of the same type.
+                if (wantedType.IsAssignableFrom(t) && wantedType != t)
+                {
+                    return t;
+                }
+            }
+
+            throw new NotImplementedException($"The requested Type [{wantedType}] has not been found.");
+        }
+
+        /// <summary>
+        ///     Returns an array of Types defined in a namespace
+        /// </summary>
+        /// <param name="assembly">The Assembly that contains the Interface Implementations</param>
+        /// <param name="nameSpace">The namespace where the implementations are defined</param>
+        /// <returns></returns>
+        private static IEnumerable<Type> GetTypesInNamespace(Assembly assembly, string nameSpace)
+        {
+            return
+              assembly.GetTypes()
+                      .Where(t => string.Equals(t.Namespace, nameSpace, StringComparison.Ordinal))
+                      .ToArray();
+        }
+
+        
         /// <summary>
         ///     Returns an instance of the passed ScopeType
         /// </summary>
@@ -85,29 +164,6 @@ namespace EntityProvider
         }
 
         /// <summary>
-        ///     Entity provider private constructor
-        /// </summary>
-        private EP(string dllLocation, string implementationsNamespace, string xmlConfigurationString = null)
-        {
-            _singletonTypes = new Dictionary<string, IEnumerable<string>>();
-            
-            // Config the Types
-            if(xmlConfigurationString != null)
-            {
-                var xroot = XDocument.Parse(xmlConfigurationString).Root;
-                if(xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
-                {
-                    throw new ArgumentException("The provided configuration does not seem to have a EP configuration");
-                }
-                _singletonTypes = SetTypesForSingleton(xroot);
-                _strongMaps = SetStrongMaps(xroot);
-            }
-
-            _dllLocation = dllLocation;
-            _implementationsNamespace = new NameSpace(implementationsNamespace);
-        }
-
-        /// <summary>
         ///     Defines the strongMaps
         /// </summary>
         /// <param name="xroot"></param>
@@ -118,9 +174,19 @@ namespace EntityProvider
                 .Descendants("StrongMaps")
                 .Descendants()
                 .Where( d => d.Name.LocalName == "Map")
-                .ToDictionary( m => m.Value, m => m.Attribute("implementation").Value);
+                .ToDictionary( m => m.Value, m => { 
+                    var typeName = m.Attribute("implementation").Value;
+                    return typeName.Contains(_implementationsNamespace.ToString())
+                    ? typeName
+                    : $"{_implementationsNamespace}.{typeName}";
+                });
         }
 
+
+        #endregion
+
+        #region PublicInterface
+        
         /// <summary>
         ///     Entity provider instance provider
         /// </summary>
@@ -250,52 +316,7 @@ namespace EntityProvider
             }
         }
 
-        /// <summary>
-        ///     Returns the Type of the Interface implementation class
-        /// </summary>
-        /// <param name="wantedType">The interface type</param>
-        /// <returns>The implementation class</returns>
-        private Type GetModelTypeOf(Type wantedType)
-        {
-            var modelTypes = GetTypesInNamespace(Assembly.LoadFrom(_dllLocation), _implementationsNamespace.ToString());
-            
-            if(_strongMaps != null && _strongMaps.Count > 0)
-            {
-                var wanterTypeString = wantedType.ToString();
-
-                if (_strongMaps.ContainsKey(wanterTypeString))
-                {
-                    var foundType =  modelTypes.FirstOrDefault(t => t.FullName == _strongMaps[wantedType.ToString()]);
-                    if(foundType != null) return foundType;
-                }
-            }
-
-            foreach (var t in modelTypes)
-            {
-                // Looking for an implementation of the requested type and not of the same type.
-                if (wantedType.IsAssignableFrom(t) && wantedType != t)
-                {
-                    return t;
-                }
-            }
-
-            throw new NotImplementedException($"The requested Type [{wantedType}] has not been found.");
-        }
-
-        /// <summary>
-        ///     Returns an array of Types defined in a namespace
-        /// </summary>
-        /// <param name="assembly">The Assembly that contains the Interface Implementations</param>
-        /// <param name="nameSpace">The namespace where the implementations are defined</param>
-        /// <returns></returns>
-        private static IEnumerable<Type> GetTypesInNamespace(Assembly assembly, string nameSpace)
-        {
-            return
-              assembly.GetTypes()
-                      .Where(t => string.Equals(t.Namespace, nameSpace, StringComparison.Ordinal))
-                      .ToArray();
-        }
-
+        
         /// <summary>
         ///     Returns a Scope
         /// </summary>
@@ -313,6 +334,10 @@ namespace EntityProvider
             }
         }
 
+
+        #endregion
+
+        #region InnerTypes
         public class Scope
         {
             private EP _sep;
@@ -369,5 +394,6 @@ namespace EntityProvider
                 return ToString().Equals(other.ToString());
             }
         }
+        #endregion
     }
 }
