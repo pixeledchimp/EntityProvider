@@ -205,6 +205,44 @@ namespace EntityProvider
                 });
         }
 
+        private void SetSingletonAndStrongMaps(XElement xroot)
+        {
+            if(xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
+            {
+                throw new ArgumentException("The provided configuration does not seem to have a EP configuration");
+            }
+            _singletonTypes = new Dictionary<string, IEnumerable<string>>();
+            _singletonTypes = SetTypesForSingleton(xroot);
+            _strongMaps = SetStrongMaps(xroot);
+        }
+
+        /// <summary>
+        ///     Returns a list of Types of the instatiationType passed from the configurationXML
+        /// </summary>
+        /// <param name="xmlConfigurationString"></param>
+        /// <param name="InstatiationType"></param>
+        /// <returns></returns>
+        private static IDictionary<string, IEnumerable<string>> SetTypesForSingleton(XElement epRoot)
+        {
+            return epRoot
+                .Descendants(_Singletons)
+                .Descendants().Where( d => d.Name.LocalName == _Type).GroupBy( n => n.GetNamespaceOfPrefix(_epns).ToString())
+               .ToDictionary( g => g.Key, g => g.Select( ge => ge.Value )) 
+               ?? new Dictionary<string, IEnumerable<string>>();
+        }
+
+        /// <summary>
+        ///     Returns an instance of the Implementation
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        private T GetNewInstance<T>(params object[] args)
+        {
+            var wantedType = typeof(T);
+            var modelType = GetModelTypeOf(wantedType);
+            return (T)Activator.CreateInstance(modelType, args);
+        }
 
         #endregion
 
@@ -304,45 +342,6 @@ namespace EntityProvider
 
                 throw e;
             }
-        }
-
-        private void SetSingletonAndStrongMaps(XElement xroot)
-        {
-            if(xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
-            {
-                throw new ArgumentException("The provided configuration does not seem to have a EP configuration");
-            }
-            _singletonTypes = new Dictionary<string, IEnumerable<string>>();
-            _singletonTypes = SetTypesForSingleton(xroot);
-            _strongMaps = SetStrongMaps(xroot);
-        }
-
-        /// <summary>
-        ///     Returns a list of Types of the instatiationType passed from the configurationXML
-        /// </summary>
-        /// <param name="xmlConfigurationString"></param>
-        /// <param name="InstatiationType"></param>
-        /// <returns></returns>
-        private static IDictionary<string, IEnumerable<string>> SetTypesForSingleton(XElement epRoot)
-        {
-            return epRoot
-                .Descendants(_Singletons)
-                .Descendants().Where( d => d.Name.LocalName == _Type).GroupBy( n => n.GetNamespaceOfPrefix(_epns).ToString())
-               .ToDictionary( g => g.Key, g => g.Select( ge => ge.Value )) 
-               ?? new Dictionary<string, IEnumerable<string>>();
-        }
-
-        /// <summary>
-        ///     Returns an instance of the Implementation
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="args"></param>
-        /// <returns></returns>
-        private T GetNewInstance<T>(params object[] args)
-        {
-            var wantedType = typeof(T);
-            var modelType = GetModelTypeOf(wantedType);
-            return (T)Activator.CreateInstance(modelType, args);
         }
 
         /// <summary>
