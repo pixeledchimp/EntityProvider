@@ -11,37 +11,36 @@ namespace EntityProvider
     public sealed class EP
     {
         #region Constructor
-
+        
         /// <summary>
-        ///     Entity provider private constructor
+        ///     Basic Constructor
         /// </summary>
-        private EP(string dllLocation, string implementationsNamespace, string xmlConfigurationString = null)
+        /// <param name="dllLocation"></param>
+        /// <param name="implementationsNamespace"></param>
+        private EP(string dllLocation, string implementationsNamespace)
         {
-            _singletonTypes = new Dictionary<string, IEnumerable<string>>();
             _dllLocation = dllLocation;
             _implementationsNamespace = new NameSpace(implementationsNamespace);
-
-            // Config the Types
-            if(xmlConfigurationString != null)
-            {
-                var xroot = XDocument.Parse(xmlConfigurationString).Root;
-                if(xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
-                {
-                    throw new ArgumentException("The provided configuration does not seem to have a EP configuration");
-                }
-                _singletonTypes = SetTypesForSingleton(xroot);
-                _strongMaps = SetStrongMaps(xroot);
-            }
         }
 
         /// <summary>
-        ///     Full featured conf
+        ///     Constructor accepts XElement
         /// </summary>
-        /// <param name="conf"></param>
-        public EP(string conf)
+        /// <param name="dllLocation"></param>
+        /// <param name="implementationsNamespace"></param>
+        /// <param name="xmlConfigurationString"></param>
+        private EP(string dllLocation, string implementationsNamespace, XElement xmlConfigurationString) : this(dllLocation, implementationsNamespace)
         {
-            var xroot = XDocument.Parse(conf).Root;
+            // Config the Types
+            SetSingletonAndStrongMaps(xmlConfigurationString);
+        }
 
+        /// <summary>
+        ///     Full featured xml conf
+        /// </summary>
+        /// <param name="xroot"></param>
+        public EP(XElement xroot)
+        {
             if(xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
             {
                 throw new ArgumentException("The provided configuration does not seem to have a EP configuration");
@@ -54,8 +53,8 @@ namespace EntityProvider
 
             _dllLocation = xroot.Attribute(_dll).Value;
             _implementationsNamespace = new NameSpace(xroot.GetNamespaceOfPrefix(_epns).NamespaceName);
-            _singletonTypes = SetTypesForSingleton(xroot);
-            _strongMaps = SetStrongMaps(xroot);
+            
+            SetSingletonAndStrongMaps(xroot);
         }
 
         #endregion
@@ -63,15 +62,10 @@ namespace EntityProvider
         #region Fields
 
         /// <summary>
-        ///     Entity Provider singleton instance
-        /// </summary>
-        private readonly static EP _instance = null;
-
-        /// <summary>
         ///     Types for Singleton
         ///     Dictionary of 
         /// </summary>
-        private IDictionary<string, IEnumerable<string>> _singletonTypes;
+        private IDictionary<string, IEnumerable<string>> _singletonTypes = new Dictionary<string, IEnumerable<string>>();
 
         /// <summary>
         ///     Path to implementation dll
@@ -117,7 +111,7 @@ namespace EntityProvider
         /// <summary>
         ///     StrongMaps
         /// </summary>
-        private readonly IDictionary<string, string> _strongMaps;
+        private IDictionary<string, string> _strongMaps;
 
         #endregion
 
@@ -224,7 +218,48 @@ namespace EntityProvider
         {
             try
             {
-                return new EP(dllLocation, implementationsNamespace, xmlConfigurationString);
+                var xdoc = XDocument.Parse(xmlConfigurationString);
+                if(xdoc == null) throw new ArgumentException($"Error parsing configuration");
+                return new EP(dllLocation, implementationsNamespace, xdoc.Root);
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
+        }
+
+        /// <summary>
+        ///     Provider accepts xelement conf
+        /// </summary>
+        /// <param name="dllLocation"></param>
+        /// <param name="implementationsNamespace"></param>
+        /// <param name="xmlConfiguration"></param>
+        /// <returns></returns>
+        public static EP GetProvider(string dllLocation, string implementationsNamespace, XElement xmlConfiguration)
+        {
+            try
+            {
+                return new EP(dllLocation, implementationsNamespace, xmlConfiguration);
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
+        }
+
+        /// <summary>
+        ///     Simple provider
+        /// </summary>
+        /// <param name="dllLocation"></param>
+        /// <param name="implementationsNamespace"></param>
+        /// <returns></returns>
+        public static EP GetProvider(string dllLocation, string implementationsNamespace)
+        {
+            try
+            {
+                return new EP(dllLocation, implementationsNamespace);
             }
             catch (Exception e)
             {
@@ -242,6 +277,26 @@ namespace EntityProvider
         {
             try
             {
+                var xdoc = XDocument.Parse(conf);
+                if(xdoc == null) throw new ArgumentException($"Error parsing configuration");
+                return new EP(xdoc.Root);
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
+        }
+
+        /// <summary>
+        ///     Provider accepts Xelement conf
+        /// </summary>
+        /// <param name="conf"></param>
+        /// <returns></returns>
+        public static EP GetProvider(XElement conf)
+        {
+            try
+            {
                 return new EP(conf);
             }
             catch (Exception e)
@@ -249,6 +304,17 @@ namespace EntityProvider
 
                 throw e;
             }
+        }
+
+        private void SetSingletonAndStrongMaps(XElement xroot)
+        {
+            if(xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
+            {
+                throw new ArgumentException("The provided configuration does not seem to have a EP configuration");
+            }
+            _singletonTypes = new Dictionary<string, IEnumerable<string>>();
+            _singletonTypes = SetTypesForSingleton(xroot);
+            _strongMaps = SetStrongMaps(xroot);
         }
 
         /// <summary>
