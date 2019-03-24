@@ -19,7 +19,7 @@ namespace EntityProvider.Tests
         ///     Tests that the returned object is of the requested type
         /// </summary>
         [Fact]
-        public void GetImplementation_Success()
+        public void GetImplementation_Test_Success()
         {
             // Arrange
             // Act
@@ -51,7 +51,7 @@ namespace EntityProvider.Tests
         ///     Tests that the Scopes and scoped entities are the same or not depending on the scope
         /// </summary>
         [Fact]
-        public void ScopeTest_Success()
+        public void ScopeTest_Test_Success()
         {
             // Arrange
             var scope = _ep.GetScope();
@@ -79,7 +79,7 @@ namespace EntityProvider.Tests
         }
 
         [Fact]
-        public void SingletonTests_Success()
+        public void Singleton_Test_Success()
         {
             // Singleton entities are always the same object
             var singletonObject = _ep.GetSingleton<IInterfaceModel>();
@@ -109,7 +109,7 @@ namespace EntityProvider.Tests
         }
 
         [Fact]
-        public void SingletonConfigurationTests()
+        public void SingletonConfiguration_Test_Success()
         {
             var conf = "<EP><Singletons xmlns:epns=\"EntityProvider.Tests\"><epns:Type>IInterfaceModel</epns:Type></Singletons></EP>";
             var localEpWithSingletonsConf = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
@@ -142,7 +142,7 @@ namespace EntityProvider.Tests
         }
 
         [Fact]
-        public void BadSingletonConfigurationTests()
+        public void BadSingletonConfigurationTests_Test_Fail()
         {
             var conf = "<EP><Singletons xmlns:epns=\"EntityProvider.Tests\"><epns:Type>IInterfaceModelX</epns:Type></Singletons></EP>";
             var aProvider = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
@@ -150,7 +150,7 @@ namespace EntityProvider.Tests
         }
 
         [Fact]
-        public void StrongMapsTest()
+        public void StrongMapsTest_Test_Success()
         {
             var conf = "<EP><StrongMaps><Map implementation=\"OtherImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
             var Ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
@@ -159,7 +159,7 @@ namespace EntityProvider.Tests
         }
 
         [Fact]
-        public void FullyFeaturedConf()
+        public void FullyFeaturedConf_Test_Success()
         {
             var conf = "<EP xmlns:epns=\"EntityProvider.Tests\" dll=\"EntityProvider.Tests.dll\"><StrongMaps><Map implementation=\"ImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps><Singletons><epns:Type>IInterfaceModel</epns:Type></Singletons></EP>";
             var Ep = EP.GetProvider(conf);
