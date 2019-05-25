@@ -3,6 +3,7 @@ using EntityProvider;
 using EntityProvider.Tests;
 using System.ComponentModel;
 using System;
+using Xunit.Abstractions;
 
 namespace EntityProvider.Tests
 {
@@ -10,9 +11,12 @@ namespace EntityProvider.Tests
     {
         private EP _ep;
 
-        public EntityProviderTests()
+        private ITestOutputHelper _output;
+
+        public EntityProviderTests(ITestOutputHelper output)
         {
             _ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests");
+            _output = output;
         }
 
         /// <summary>
@@ -190,6 +194,15 @@ namespace EntityProvider.Tests
             // Entity providers cannot provide Singletons from Namespaces where there is no imlementation
             var noImplementationEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.NotImplementedEntities", conf);
             Assert.Throws<NotImplementedException>(() => noImplementationEp.New<IInterfaceModel>());
+        }
+
+        [Fact]
+        public void GetProviderusingLoadedAssembly_Tests()
+        {
+            var ep = EP.GetProvider("EntityProvider.Tests", "EntityProvider.Tests");
+            const string greeting = "Hello World";
+            var model = ep.GetTransient<IInterfaceModel>(greeting, 42);
+            Assert.Equal(greeting, model.SomeProp1);
         }
     }
 }

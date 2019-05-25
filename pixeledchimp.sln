@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.421
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.202
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EntityProvider", "EntityProvider\EntityProvider.csproj", "{533D3053-A8AD-470B-80CC-7F5E6BDF7A6C}"
 EndProject
@@ -13,12 +13,12 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{533D3053-A8AD-470B-80CC-7F5E6BDF7A6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{533D3053-A8AD-470B-80CC-7F5E6BDF7A6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{533D3053-A8AD-470B-80CC-7F5E6BDF7A6C}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{533D3053-A8AD-470B-80CC-7F5E6BDF7A6C}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{533D3053-A8AD-470B-80CC-7F5E6BDF7A6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{533D3053-A8AD-470B-80CC-7F5E6BDF7A6C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8F687625-280C-469B-B523-94E84A999676}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8F687625-280C-469B-B523-94E84A999676}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F687625-280C-469B-B523-94E84A999676}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{8F687625-280C-469B-B523-94E84A999676}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{8F687625-280C-469B-B523-94E84A999676}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8F687625-280C-469B-B523-94E84A999676}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection

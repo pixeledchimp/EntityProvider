@@ -124,7 +124,8 @@ namespace EntityProvider
         /// <returns>The implementation class</returns>
         private Type GetModelTypeOf(Type wantedType)
         {
-            var modelTypes = GetTypesInNamespace(Assembly.LoadFrom(_dllLocation), _implementationsNamespace.ToString());
+            var assembly = GetAssemblyIfLoaded(_dllLocation) ?? Assembly.LoadFrom(_dllLocation);
+            var modelTypes = GetTypesInNamespace(assembly, _implementationsNamespace.ToString());
             
             if(_strongMaps?.Count > 0)
             {
@@ -244,10 +245,19 @@ namespace EntityProvider
             return (T)Activator.CreateInstance(modelType, args);
         }
 
+        private Assembly GetAssemblyIfLoaded(string name)
+        {
+            try
+            {
+                return Array.Find(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name.Equals(name));
+            }
+            catch { throw; }
+        }
+
         #endregion
 
         #region PublicInterface
-        
+
         /// <summary>
         ///     Entity provider instance provider
         /// </summary>
@@ -260,10 +270,10 @@ namespace EntityProvider
                 if(xdoc == null) throw new ArgumentException($"Error parsing configuration");
                 return new EP(dllLocation, implementationsNamespace, xdoc.Root);
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
-                throw e;
+                throw;
             }
         }
 
@@ -280,10 +290,10 @@ namespace EntityProvider
             {
                 return new EP(dllLocation, implementationsNamespace, xmlConfiguration);
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
-                throw e;
+                throw;
             }
         }
 
@@ -299,10 +309,10 @@ namespace EntityProvider
             {
                 return new EP(dllLocation, implementationsNamespace);
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
-                throw e;
+                throw;
             }
         }
 
@@ -319,10 +329,10 @@ namespace EntityProvider
                 if(xdoc == null) throw new ArgumentException($"Error parsing configuration");
                 return new EP(xdoc.Root);
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
-                throw e;
+                throw;
             }
         }
 
@@ -337,10 +347,10 @@ namespace EntityProvider
             {
                 return new EP(conf);
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
-                throw e;
+                throw;
             }
         }
 
@@ -401,10 +411,10 @@ namespace EntityProvider
             {
                 throw;
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
-                throw e;
+                throw;
             }
         }
 
@@ -420,10 +430,10 @@ namespace EntityProvider
             {
                 return Get<T>(args: args);
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
-                throw e;
+                throw;
             }
         }
 
@@ -438,10 +448,10 @@ namespace EntityProvider
             {
                 return new Scope(_dllLocation, _implementationsNamespace.ToString());
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
-                throw e;
+                throw;
             }
         }
 
@@ -470,10 +480,10 @@ namespace EntityProvider
                 {
                     return _sep.Get<T>(_scoped, args);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
 
-                    throw e;
+                    throw;
                 }
             }
 
