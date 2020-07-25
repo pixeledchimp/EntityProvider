@@ -9,7 +9,10 @@ namespace EntityProvider
     public sealed class EP
     {
         #region Constructor
-
+        private EP(NameSpace implementationsNamespace)
+        {
+            _implementationsNamespace = implementationsNamespace;
+        }
         /// <summary>
         ///     Basic Constructor
         /// </summary>
@@ -68,7 +71,7 @@ namespace EntityProvider
         /// <summary>
         ///     Path to implementation dll
         /// </summary>
-        private readonly string _dllLocation;
+        private readonly string? _dllLocation;
 
         /// <summary>
         ///     Name of the TAG that contains the EntityProvider configuration options
@@ -122,7 +125,10 @@ namespace EntityProvider
         /// <returns>The implementation class</returns>
         private Type GetModelTypeOf(Type wantedType)
         {
-            var assembly = GetAssemblyIfLoaded(_dllLocation) ?? Assembly.LoadFrom(_dllLocation);
+
+            var assembly = _dllLocation == null
+                ? Assembly.GetAssembly(wantedType)
+                : GetAssemblyIfLoaded(_dllLocation) ?? Assembly.LoadFrom(_dllLocation);
             var modelTypes = GetTypesInNamespace(assembly, _implementationsNamespace);
 
             if (_strongMaps?.Count > 0)
@@ -244,7 +250,7 @@ namespace EntityProvider
             return (T)Activator.CreateInstance(modelType, args);
         }
 
-        private Assembly GetAssemblyIfLoaded(string name)
+        private Assembly GetAssemblyIfLoaded(string? name)
         {
             return Array.Find(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name.Equals(name));
         }
@@ -315,7 +321,7 @@ namespace EntityProvider
         /// <returns></returns>
         public static EP GetProvider(NameSpace ns)
         {
-            return new EP(Assembly.GetCallingAssembly().Location, ns);
+            return new EP(ns);
         }
 
         /// <summary>
