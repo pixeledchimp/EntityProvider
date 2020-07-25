@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
-using System.Xml;
 using System.Xml.Linq;
 
 namespace EntityProvider
@@ -11,16 +9,16 @@ namespace EntityProvider
     public sealed class EP
     {
         #region Constructor
-        
+
         /// <summary>
         ///     Basic Constructor
         /// </summary>
         /// <param name="dllLocation"></param>
         /// <param name="implementationsNamespace"></param>
-        private EP(string dllLocation, string implementationsNamespace)
+        private EP(string dllLocation, NameSpace implementationsNamespace)
         {
             _dllLocation = dllLocation;
-            _implementationsNamespace = new NameSpace(implementationsNamespace);
+            _implementationsNamespace = implementationsNamespace;
         }
 
         /// <summary>
@@ -29,7 +27,7 @@ namespace EntityProvider
         /// <param name="dllLocation"></param>
         /// <param name="implementationsNamespace"></param>
         /// <param name="xmlConfigurationString"></param>
-        private EP(string dllLocation, string implementationsNamespace, XElement xmlConfigurationString) : this(dllLocation, implementationsNamespace)
+        private EP(string dllLocation, NameSpace implementationsNamespace, XElement xmlConfigurationString) : this(dllLocation, implementationsNamespace)
         {
             // Config the Types
             SetSingletonAndStrongMaps(xmlConfigurationString);
@@ -41,19 +39,19 @@ namespace EntityProvider
         /// <param name="xroot"></param>
         public EP(XElement xroot)
         {
-            if(xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
+            if (xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
             {
                 throw new ArgumentException("The provided configuration does not seem to have a EP configuration");
             }
 
-            if (!xroot.Attributes().Any( a => a.Name.LocalName == _epns) || !xroot.Attributes().Any( a => a.Name.LocalName == _dll ))
+            if (!xroot.Attributes().Any(a => a.Name.LocalName == _epns) || !xroot.Attributes().Any(a => a.Name.LocalName == _dll))
             {
                 throw new ArgumentException("The provided configuration does not seem to be a full feature EP configuration");
             }
 
             _dllLocation = xroot.Attribute(_dll).Value;
-            _implementationsNamespace = new NameSpace(xroot.GetNamespaceOfPrefix(_epns).NamespaceName);
-            
+            _implementationsNamespace = xroot.GetNamespaceOfPrefix(_epns).NamespaceName;
+
             SetSingletonAndStrongMaps(xroot);
         }
 
@@ -102,7 +100,7 @@ namespace EntityProvider
         ///     Implementations namespace
         /// </summary>
         private NameSpace _implementationsNamespace;
-        
+
         /// <summary>
         ///     Collection that stores singleton objects
         /// </summary>
@@ -111,12 +109,12 @@ namespace EntityProvider
         /// <summary>
         ///     StrongMaps
         /// </summary>
-        private IDictionary<string, string> _strongMaps;
+        private IDictionary<string, string> _strongMaps = new Dictionary<string, string>();
 
         #endregion
 
         #region PrivateInterface
-        
+
         /// <summary>
         ///     Returns the Type of the Interface implementation class
         /// </summary>
@@ -125,16 +123,16 @@ namespace EntityProvider
         private Type GetModelTypeOf(Type wantedType)
         {
             var assembly = GetAssemblyIfLoaded(_dllLocation) ?? Assembly.LoadFrom(_dllLocation);
-            var modelTypes = GetTypesInNamespace(assembly, _implementationsNamespace.ToString());
-            
-            if(_strongMaps?.Count > 0)
-            {
-                var wanterTypeString = wantedType.ToString();
+            var modelTypes = GetTypesInNamespace(assembly, _implementationsNamespace);
 
-                if (_strongMaps.ContainsKey(wanterTypeString))
+            if (_strongMaps?.Count > 0)
+            {
+                var wantedTypeString = wantedType.ToString();
+
+                if (_strongMaps.ContainsKey(wantedTypeString))
                 {
-                    var foundType =  modelTypes.FirstOrDefault(t => t.FullName == _strongMaps[wantedType.ToString()]);
-                    if(foundType != null) return foundType;
+                    var foundType = modelTypes.FirstOrDefault(t => t.FullName == _strongMaps[wantedType.ToString()]);
+                    if (foundType != null) return foundType;
                 }
             }
 
@@ -164,7 +162,7 @@ namespace EntityProvider
                       .ToArray();
         }
 
-        
+
         /// <summary>
         ///     Returns an instance of the passed ScopeType
         /// </summary>
@@ -197,8 +195,9 @@ namespace EntityProvider
             return xroot
                 .Descendants("StrongMaps")
                 .Descendants()
-                .Where( d => d.Name.LocalName == "Map")
-                .ToDictionary( m => m.Value, m => { 
+                .Where(d => d.Name.LocalName == "Map")
+                .ToDictionary(m => m.Value, m =>
+                {
                     var typeName = m.Attribute("implementation").Value;
                     return typeName.Contains(_implementationsNamespace.ToString())
                     ? typeName
@@ -208,7 +207,7 @@ namespace EntityProvider
 
         private void SetSingletonAndStrongMaps(XElement xroot)
         {
-            if(xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
+            if (xroot.Name.LocalName != _EP && !xroot.Descendants(_EP).Any())
             {
                 throw new ArgumentException("The provided configuration does not seem to have a EP configuration");
             }
@@ -227,8 +226,8 @@ namespace EntityProvider
         {
             return epRoot
                 .Descendants(_Singletons)
-                .Descendants().Where( d => d.Name.LocalName == _Type).GroupBy( n => n.GetNamespaceOfPrefix(_epns).ToString())
-               .ToDictionary( g => g.Key, g => g.Select( ge => ge.Value )) 
+                .Descendants().Where(d => d.Name.LocalName == _Type).GroupBy(n => n.GetNamespaceOfPrefix(_epns).ToString())
+               .ToDictionary(g => g.Key, g => g.Select(ge => ge.Value))
                ?? new Dictionary<string, IEnumerable<string>>();
         }
 
@@ -247,11 +246,7 @@ namespace EntityProvider
 
         private Assembly GetAssemblyIfLoaded(string name)
         {
-            try
-            {
-                return Array.Find(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name.Equals(name));
-            }
-            catch { throw; }
+            return Array.Find(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name.Equals(name));
         }
 
         #endregion
@@ -264,17 +259,9 @@ namespace EntityProvider
         /// <returns></returns>
         public static EP GetProvider(string dllLocation, string implementationsNamespace, string xmlConfigurationString = null)
         {
-            try
-            {
-                var xdoc = XDocument.Parse(xmlConfigurationString);
-                if(xdoc == null) throw new ArgumentException($"Error parsing configuration");
-                return new EP(dllLocation, implementationsNamespace, xdoc.Root);
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+            var xdoc = XDocument.Parse(xmlConfigurationString);
+            if (xdoc == null) throw new ArgumentException($"Error parsing configuration");
+            return new EP(dllLocation, implementationsNamespace, xdoc.Root);
         }
 
         /// <summary>
@@ -286,15 +273,7 @@ namespace EntityProvider
         /// <returns></returns>
         public static EP GetProvider(string dllLocation, string implementationsNamespace, XElement xmlConfiguration)
         {
-            try
-            {
-                return new EP(dllLocation, implementationsNamespace, xmlConfiguration);
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+            return new EP(dllLocation, implementationsNamespace, xmlConfiguration);
         }
 
         /// <summary>
@@ -305,15 +284,7 @@ namespace EntityProvider
         /// <returns></returns>
         public static EP GetProvider(string dllLocation, string implementationsNamespace)
         {
-            try
-            {
-                return new EP(dllLocation, implementationsNamespace);
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+            return new EP(dllLocation, implementationsNamespace);
         }
 
         /// <summary>
@@ -323,17 +294,9 @@ namespace EntityProvider
         /// <returns></returns>
         public static EP GetProvider(string conf)
         {
-            try
-            {
-                var xdoc = XDocument.Parse(conf);
-                if(xdoc == null) throw new ArgumentException($"Error parsing configuration");
-                return new EP(xdoc.Root);
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+            var xdoc = XDocument.Parse(conf);
+            if (xdoc == null) throw new ArgumentException($"Error parsing configuration");
+            return new EP(xdoc.Root);
         }
 
         /// <summary>
@@ -343,15 +306,16 @@ namespace EntityProvider
         /// <returns></returns>
         public static EP GetProvider(XElement conf)
         {
-            try
-            {
-                return new EP(conf);
-            }
-            catch (Exception)
-            {
+            return new EP(conf);
+        }
 
-                throw;
-            }
+        /// <summary>
+        ///     No arguments will get entities from the current assembly.
+        /// </summary>
+        /// <returns></returns>
+        public static EP GetProvider(NameSpace ns)
+        {
+            return new EP(Assembly.GetCallingAssembly().Location, ns);
         }
 
         /// <summary>
@@ -363,7 +327,7 @@ namespace EntityProvider
         /// <returns></returns>
         public T New<T>(params object[] args)
         {
-            if(_singletonTypes.Count > 0 && InSingletonTypes<T>())
+            if (_singletonTypes.Count > 0 && InSingletonTypes<T>())
                 return GetSingleton<T>(args);
 
             return GetTransient<T>(args);
@@ -376,7 +340,7 @@ namespace EntityProvider
         /// <returns></returns>
         private bool InSingletonTypes<T>()
         {
-            return _singletonTypes.ContainsKey(typeof(T).Namespace) 
+            return _singletonTypes.ContainsKey(typeof(T).Namespace)
                 && _singletonTypes[typeof(T).Namespace].Contains(typeof(T).Name);
         }
 
@@ -388,34 +352,22 @@ namespace EntityProvider
         /// <returns></returns>
         public T GetSingleton<T>(params object[] args)
         {
-            try
+            if (_singletonTypes.Any() && !InSingletonTypes<T>())
             {
-                if(_singletonTypes.Any() && !InSingletonTypes<T>())
-                {
-                    throw new TypeAccessException("The requested Is not meant to be singleton. Please add it to your configuration if you want it so.");
-                }
-
-                if (!_singletons.ContainsKey(_dllLocation))
-                {
-                    _singletons.Add(_dllLocation, new Dictionary<NameSpace, IDictionary<Type, object>>());
-                }
-
-                if (!_singletons[_dllLocation].ContainsKey(_implementationsNamespace))
-                {
-                    _singletons[_dllLocation].Add(_implementationsNamespace, new Dictionary<Type, object>());
-                }
-
-                return Get<T>(_singletons[_dllLocation][_implementationsNamespace], args);
+                throw new TypeAccessException("The requested Is not meant to be singleton. Please add it to your configuration if you want it so.");
             }
-            catch (TypeAccessException)
+
+            if (!_singletons.ContainsKey(_dllLocation))
             {
-                throw;
+                _singletons.Add(_dllLocation, new Dictionary<NameSpace, IDictionary<Type, object>>());
             }
-            catch (Exception)
-            {
 
-                throw;
+            if (!_singletons[_dllLocation].ContainsKey(_implementationsNamespace))
+            {
+                _singletons[_dllLocation].Add(_implementationsNamespace, new Dictionary<Type, object>());
             }
+
+            return Get<T>(_singletons[_dllLocation][_implementationsNamespace], args);
         }
 
         /// <summary>
@@ -426,33 +378,17 @@ namespace EntityProvider
         /// <returns></returns>
         public T GetTransient<T>(params object[] args)
         {
-            try
-            {
-                return Get<T>(args: args);
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+            return Get<T>(args: args);
         }
 
-        
+
         /// <summary>
         ///     Returns a Scope
         /// </summary>
         /// <returns></returns>
         public Scope GetScope()
         {
-            try
-            {
-                return new Scope(_dllLocation, _implementationsNamespace.ToString());
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+            return new Scope(_dllLocation, _implementationsNamespace.ToString());
         }
 
 
@@ -476,15 +412,7 @@ namespace EntityProvider
             /// <returns></returns>
             public T Get<T>(params object[] args)
             {
-                try
-                {
-                    return _sep.Get<T>(_scoped, args);
-                }
-                catch (Exception)
-                {
-
-                    throw;
-                }
+                return _sep.Get<T>(_scoped, args);
             }
 
             /// <summary>
@@ -493,26 +421,33 @@ namespace EntityProvider
             private readonly IDictionary<Type, object> _scoped = new Dictionary<Type, object>();
         }
 
-        /// <summary>
-        ///     Represents a Type namespace
-        /// </summary>
-        private struct NameSpace : IEquatable<NameSpace>
+        public struct NameSpace : IEquatable<NameSpace>
         {
-            private string _namespace;
+            public readonly string Name;
 
-            public NameSpace(string @namespace)
+            public NameSpace(string name)
             {
-                _namespace = @namespace;
-            }
-
-            public override string ToString()
-            {
-                return _namespace.Trim();
+                Name = name;
             }
 
             public bool Equals(NameSpace other)
             {
-                return ToString().Equals(other.ToString());
+                return Name == other.Name;
+            }
+
+            public override string ToString()
+            {
+                return Name;
+            }
+
+            public static implicit operator string(NameSpace ns)
+            {
+                return ns.Name;
+            }
+
+            public static implicit operator NameSpace(string ns)
+            {
+                return new NameSpace(ns);
             }
         }
         #endregion

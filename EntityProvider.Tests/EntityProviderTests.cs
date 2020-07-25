@@ -1,9 +1,5 @@
-﻿using Xunit;
-using EntityProvider;
-using EntityProvider.Tests;
-using System.ComponentModel;
-using System;
-using Xunit.Abstractions;
+﻿using System;
+using Xunit;
 
 namespace EntityProvider.Tests
 {
@@ -11,12 +7,22 @@ namespace EntityProvider.Tests
     {
         private EP _ep;
 
-        private ITestOutputHelper _output;
-
-        public EntityProviderTests(ITestOutputHelper output)
+        public EntityProviderTests()
         {
             _ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests");
-            _output = output;
+        }
+
+        [Fact]
+        public void GetImplementationFromCurrentAssemblySuccess()
+        {
+            // Arrange
+            var ep = EP.GetProvider(new EP.NameSpace("EntityProvider.Tests"));
+
+            // Act
+            var implementedModel = ep.GetTransient<IInterfaceModel>();
+
+            // Assert
+            Assert.IsAssignableFrom<IInterfaceModel>(implementedModel);
         }
 
         /// <summary>
@@ -118,7 +124,7 @@ namespace EntityProvider.Tests
             var conf = "<EP><Singletons xmlns:epns=\"EntityProvider.Tests\"><epns:Type>IInterfaceModel</epns:Type></Singletons></EP>";
             var localEpWithSingletonsConf = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
 
-             // Singleton entities are always the same object
+            // Singleton entities are always the same object
             var singletonObject = _ep.GetSingleton<IInterfaceModel>();
             var singletonSame = localEpWithSingletonsConf.New<IInterfaceModel>();
             {
@@ -165,11 +171,20 @@ namespace EntityProvider.Tests
         [Fact]
         public void FullyFeaturedConf_Test_Success()
         {
-            var conf = "<EP xmlns:epns=\"EntityProvider.Tests\" dll=\"EntityProvider.Tests.dll\"><StrongMaps><Map implementation=\"ImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps><Singletons><epns:Type>IInterfaceModel</epns:Type></Singletons></EP>";
+            var conf = @"<EP xmlns:epns=""EntityProvider.Tests"" dll=""EntityProvider.Tests.dll"">
+                            <StrongMaps>
+                                <Map implementation=""ImplementedModel"">
+                                    EntityProvider.Tests.IInterfaceModel
+                                </Map>
+                            </StrongMaps>
+                            <Singletons>
+                                <epns:Type>IInterfaceModel</epns:Type>
+                            </Singletons>
+                         </EP>";
             var Ep = EP.GetProvider(conf);
             var impl = Ep.New<IInterfaceModel>();
-            
-             // Singleton entities are always the same object
+
+            // Singleton entities are always the same object
             var singletonObject = _ep.GetSingleton<IInterfaceModel>();
             var singletonSame = Ep.New<IInterfaceModel>();
             {
