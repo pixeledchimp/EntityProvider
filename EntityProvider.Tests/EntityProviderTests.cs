@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using Xunit;
 
 namespace EntityProvider.Tests
@@ -9,14 +10,14 @@ namespace EntityProvider.Tests
 
         public EntityProviderTests()
         {
-            _ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests");
+            _ep = EpFactory.GetProvider(Assembly.GetExecutingAssembly().Location, "EntityProvider.Tests");
         }
 
         [Fact]
         public void GetImplementationFromCurrentAssemblySuccess()
         {
             // Arrange
-            var ep = EP.GetProvider();
+            var ep = EpFactory.GetProvider();
 
             // Act
             var implementedModel = ep.GetTransient<IInterfaceModel>();
@@ -46,8 +47,8 @@ namespace EntityProvider.Tests
         public void ConstructorArguments_Test_Success()
         {
             // Arrange
-            var dontPanic = "Dont' Panic!";
-            var answerToLifeTheUniverseAndEverything = 42;
+            const string dontPanic = "Dont' Panic!";
+            const int answerToLifeTheUniverseAndEverything = 42;
 
             // Act
             var implementedModel = _ep.GetTransient<IInterfaceModel>(dontPanic, answerToLifeTheUniverseAndEverything);
@@ -93,7 +94,7 @@ namespace EntityProvider.Tests
         {
             // Singleton entities are always the same object
             var singletonObject = _ep.GetSingleton<IInterfaceModel>();
-            var singletonSame = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests").GetSingleton<IInterfaceModel>();
+            var singletonSame = EpFactory.GetProvider(Assembly.GetExecutingAssembly().Location, "EntityProvider.Tests").GetSingleton<IInterfaceModel>();
             {
                 var singletonObjectIndifferentScope = _ep.GetSingleton<IInterfaceModel>();
 
@@ -107,14 +108,14 @@ namespace EntityProvider.Tests
             }
 
             // EntityProviders must return different singletons from different namespaces
-            var otherEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.New");
+            var otherEp = EpFactory.GetProvider(Assembly.GetExecutingAssembly().Location, "EntityProvider.Tests.New");
 
             var singletonObjectNew = otherEp.GetSingleton<IInterfaceModel>();
 
             Assert.NotEqual(singletonObject, singletonObjectNew);
 
             // Entity providers cannot provide Singletons from Namespaces where there is no imlementation
-            var noImplementationEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.NotImplementedEntities");
+            var noImplementationEp = EpFactory.GetProvider(Assembly.GetExecutingAssembly().Location, "EntityProvider.Tests.NotImplementedEntities");
             Assert.Throws<NotImplementedException>(() => noImplementationEp.GetSingleton<IInterfaceModel>());
         }
 
@@ -122,7 +123,7 @@ namespace EntityProvider.Tests
         public void SingletonConfiguration_Test_Success()
         {
             var conf = "<EP><Singletons xmlns:epns=\"EntityProvider.Tests\"><epns:Type>IInterfaceModel</epns:Type></Singletons></EP>";
-            var localEpWithSingletonsConf = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
+            var localEpWithSingletonsConf = EpFactory.GetProvider(Assembly.GetExecutingAssembly().Location, "EntityProvider.Tests", conf);
 
             // Singleton entities are always the same object
             var singletonObject = _ep.GetSingleton<IInterfaceModel>();
@@ -140,14 +141,14 @@ namespace EntityProvider.Tests
             }
 
             // EntityProviders must return different singletons from different namespaces
-            var otherEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.New", conf);
+            var otherEp = EpFactory.GetProvider(Assembly.GetExecutingAssembly().Location, "EntityProvider.Tests.New", conf);
 
             var singletonObjectNew = otherEp.New<IInterfaceModel>();
 
             Assert.NotEqual(singletonObject, singletonObjectNew);
 
             // Entity providers cannot provide Singletons from Namespaces where there is no imlementation
-            var noImplementationEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.NotImplementedEntities", conf);
+            var noImplementationEp = EpFactory.GetProvider(Assembly.GetExecutingAssembly().Location, "EntityProvider.Tests.NotImplementedEntities", conf);
             Assert.Throws<NotImplementedException>(() => noImplementationEp.New<IInterfaceModel>());
         }
 
@@ -155,7 +156,7 @@ namespace EntityProvider.Tests
         public void BadSingletonConfigurationTests_Test_Fail()
         {
             var conf = "<EP><Singletons xmlns:epns=\"EntityProvider.Tests\"><epns:Type>IInterfaceModelX</epns:Type></Singletons></EP>";
-            var aProvider = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
+            var aProvider = EpFactory.GetProvider(Assembly.GetExecutingAssembly().Location, "EntityProvider.Tests", conf);
             Assert.Throws<TypeAccessException>(() => aProvider.GetSingleton<IInterfaceModel>());
         }
 
@@ -163,7 +164,7 @@ namespace EntityProvider.Tests
         public void StrongMapsTest_Test_Success()
         {
             var conf = "<EP><StrongMaps><Map implementation=\"OtherImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
-            var Ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
+            var Ep = EpFactory.GetProvider(Assembly.GetExecutingAssembly().Location, "EntityProvider.Tests", conf);
             var impl = Ep.New<IInterfaceModel>();
             Assert.Equal("EntityProvider.Tests.OtherImplementedModel", impl.SomeProp1);
         }
@@ -171,7 +172,7 @@ namespace EntityProvider.Tests
         [Fact]
         public void FullyFeaturedConf_Test_Success()
         {
-            var conf = @"<EP xmlns:epns=""EntityProvider.Tests"" dll=""EntityProvider.Tests.dll"">
+            var conf = $@"<EP xmlns:epns=""EntityProvider.Tests"" dll=""{Assembly.GetExecutingAssembly().Location}"">
                             <StrongMaps>
                                 <Map implementation=""ImplementedModel"">
                                     EntityProvider.Tests.IInterfaceModel
@@ -181,7 +182,7 @@ namespace EntityProvider.Tests
                                 <epns:Type>IInterfaceModel</epns:Type>
                             </Singletons>
                          </EP>";
-            var Ep = EP.GetProvider(conf);
+            var Ep = EpFactory.GetProvider(conf);
             var impl = Ep.New<IInterfaceModel>();
 
             // Singleton entities are always the same object
@@ -200,21 +201,21 @@ namespace EntityProvider.Tests
             }
 
             // EntityProviders must return different singletons from different namespaces
-            var otherEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.New", conf);
+            var otherEp = EpFactory.GetProvider(Assembly.GetExecutingAssembly().Location, "EntityProvider.Tests.New", conf);
 
             var singletonObjectNew = otherEp.New<IInterfaceModel>();
 
             Assert.NotEqual(singletonObject, singletonObjectNew);
 
             // Entity providers cannot provide Singletons from Namespaces where there is no imlementation
-            var noImplementationEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.NotImplementedEntities", conf);
+            var noImplementationEp = EpFactory.GetProvider(Assembly.GetExecutingAssembly().Location, "EntityProvider.Tests.NotImplementedEntities", conf);
             Assert.Throws<NotImplementedException>(() => noImplementationEp.New<IInterfaceModel>());
         }
 
         [Fact]
         public void GetProviderusingLoadedAssembly_Tests()
         {
-            var ep = EP.GetProvider("EntityProvider.Tests", "EntityProvider.Tests");
+            var ep = EpFactory.GetProvider("EntityProvider.Tests", "EntityProvider.Tests");
             const string greeting = "Hello World";
             var model = ep.GetTransient<IInterfaceModel>(greeting, 42);
             Assert.Equal(greeting, model.SomeProp1);
