@@ -9,9 +9,14 @@ namespace EntityProvider
     public sealed class EP
     {
         #region Constructor
-        private EP(NameSpace implementationsNamespace)
+        private EP(Assembly callingAssenbly, NameSpace? implementationsNamespace = null)
         {
-            _implementationsNamespace = implementationsNamespace;
+            _callingAssenbly = callingAssenbly;
+
+            if (implementationsNamespace.HasValue)
+            {
+                _implementationsNamespace = (NameSpace)implementationsNamespace;
+            }
         }
         /// <summary>
         ///     Basic Constructor
@@ -102,7 +107,12 @@ namespace EntityProvider
         /// <summary>
         ///     Implementations namespace
         /// </summary>
-        private NameSpace _implementationsNamespace;
+        private NameSpace? _implementationsNamespace;
+
+        /// <summary>
+        ///      The assembly from where the EP instance is been created
+        /// </summary>
+        private Assembly? _callingAssenbly;
 
         /// <summary>
         ///     Collection that stores singleton objects
@@ -126,10 +136,22 @@ namespace EntityProvider
         private Type GetModelTypeOf(Type wantedType)
         {
 
-            var assembly = _dllLocation == null
-                ? Assembly.GetAssembly(wantedType)
-                : GetAssemblyIfLoaded(_dllLocation) ?? Assembly.LoadFrom(_dllLocation);
-            var modelTypes = GetTypesInNamespace(assembly, _implementationsNamespace);
+            var assembly = _callingAssenbly != null
+                ? _callingAssenbly
+                : _dllLocation == null
+                    ? Assembly.GetAssembly(wantedType)
+                    : GetAssemblyIfLoaded(_dllLocation) ?? Assembly.LoadFrom(_dllLocation);
+
+            IEnumerable<Type>? modelTypes = null;
+
+            if (_implementationsNamespace != null)
+            {
+                modelTypes = GetTypesInNamespace(assembly, _implementationsNamespace);
+            }
+            else
+            {
+                modelTypes = assembly.GetTypes();
+            }
 
             if (_strongMaps?.Count > 0)
             {
@@ -319,9 +341,9 @@ namespace EntityProvider
         ///     No arguments will get entities from the current assembly.
         /// </summary>
         /// <returns></returns>
-        public static EP GetProvider(NameSpace ns)
+        public static EP GetProvider(NameSpace? ns = null)
         {
-            return new EP(ns);
+            return new EP(Assembly.GetCallingAssembly(), ns);
         }
 
         /// <summary>
@@ -358,7 +380,7 @@ namespace EntityProvider
         /// <returns></returns>
         public T GetSingleton<T>(params object[] args)
         {
-            if (_singletonTypes.Any() && !InSingletonTypes<T>())
+            if (_singletonTypes.Any() && !InSingletonTypes<T>() || !_implementationsNamespace.HasValue || _dllLocation == null)
             {
                 throw new TypeAccessException("The requested Is not meant to be singleton. Please add it to your configuration if you want it so.");
             }
@@ -368,12 +390,12 @@ namespace EntityProvider
                 _singletons.Add(_dllLocation, new Dictionary<NameSpace, IDictionary<Type, object>>());
             }
 
-            if (!_singletons[_dllLocation].ContainsKey(_implementationsNamespace))
+            if (!_singletons[_dllLocation].ContainsKey((NameSpace)_implementationsNamespace))
             {
-                _singletons[_dllLocation].Add(_implementationsNamespace, new Dictionary<Type, object>());
+                _singletons[_dllLocation].Add((NameSpace)_implementationsNamespace, new Dictionary<Type, object>());
             }
 
-            return Get<T>(_singletons[_dllLocation][_implementationsNamespace], args);
+            return Get<T>(_singletons[_dllLocation][(NameSpace)_implementationsNamespace], args);
         }
 
         /// <summary>

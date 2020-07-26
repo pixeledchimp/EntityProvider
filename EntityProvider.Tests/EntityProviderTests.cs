@@ -16,7 +16,7 @@ namespace EntityProvider.Tests
         public void GetImplementationFromCurrentAssemblySuccess()
         {
             // Arrange
-            var ep = EP.GetProvider(new EP.NameSpace("EntityProvider.Tests"));
+            var ep = EP.GetProvider();
 
             // Act
             var implementedModel = ep.GetTransient<IInterfaceModel>();
