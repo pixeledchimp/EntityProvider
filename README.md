@@ -139,7 +139,7 @@ var conf = "<EP xmlns:epns=\"EntityProvider.Tests\"><epns:Singleton value=\"IInt
 
 
 ### StrongMaps
-By providing a strong mapping of the types you'd be able to keep more than one implementation of the requested type under the same namespace and define which one will be used.
+By providing a strong mapping of the types you'd be able to define which implementation to use in case you had more than one under the same namespace.
 ```
 
 var conf = "<EP><StrongMaps><Map implementation=\"EntityProvider.Tests.ImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
