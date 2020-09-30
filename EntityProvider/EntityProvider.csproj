@@ -1,22 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyVersion>1.3.0.0</AssemblyVersion>
-    <FileVersion>1.3.0.0</FileVersion>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
     <Authors>Jairo E. Vengoechea R.</Authors>
-    <PackageLicenseUrl>http://www.apache.org/licenses/</PackageLicenseUrl>
-    <Copyright>© 2019 Jairo Enrique Vengoechea Rueda</Copyright>
-    <Version>1.3.0.0</Version>
+    <Copyright>© 2020 Jairo Enrique Vengoechea Rueda</Copyright>
+    <Version>2.0.0.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/pixeledchimp/EntityProvider</PackageProjectUrl>
     <RepositoryUrl>https://github.com/pixeledchimp/EntityProvider</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
-    <Description>EntityProvider is a DI helper class that aims to simplify cluttered and crowded constructors by the use of organization and configuration.</Description>
-    <PackageReleaseNotes>Adding Strong mapping for types in configuration xml
-Adding Full Featured conf
-</PackageReleaseNotes>
+    <Description>EntityProvider is a small libray that helps you get an implementation of a certain Interface.</Description>
+    <PackageReleaseNotes>- Created EpFactory class. EP Will not contain static factory methods.
+- Getting a EP to return implementations from the current assembly does not require arguments.</PackageReleaseNotes>
+    <Nullable>enable</Nullable>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
 
 </Project>

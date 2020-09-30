@@ -1,5 +1,5 @@
 # EntityProvider
-A Dependency injection Helper tool
+A Dependency invesion Helper tool
 
 
 ## 1. Conventions:
@@ -18,7 +18,7 @@ namespace YourNamespace
   {
     public static void Main(string[] args)
     {
-      var _ep = EP.GetProvider("YourImplementations.dll", "YourImplementationsNamespace"); // Get an instance if the EntityProvider
+      var _ep = EpFactory.GetProvider("YourImplementations.dll", "YourImplementationsNamespace"); // Get an instance if the EntityProvider
     }
   }
 }
@@ -28,7 +28,7 @@ namespace YourNamespace
 ### Instantiate an entity
 ```
 ...
-var _ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests"); // Get an instance if the EntityProvider
+var _ep = EpFactory.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests"); // Get an instance if the EntityProvider
 
 var implementedModel = _ep.GetTransient<IInterfaceModel>(); // Get a fresh instance
 
@@ -74,7 +74,7 @@ var scopedObject2 = scope.Get<IInterfaceModel>();
 ```
 // Singleton entities are always the same object
 var singletonObject = _ep.GetSingleton<IInterfaceModel>();
-var singletonSame = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests").GetSingleton<IInterfaceModel>();
+var singletonSame = EpFactory.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests").GetSingleton<IInterfaceModel>();
 {
     var singletonObjectIndifferentScope = _ep.GetSingleton<IInterfaceModel>();
 
@@ -95,7 +95,7 @@ var singletonObjectNew = otherEp.GetSingleton<IInterfaceModel>();
 Assert.NotEqual(singletonObject, singletonObjectNew);
 
 // Entity providers cannot provide Singletons from Namespaces where there is no imlementation
-var noImplementationEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.NotImplementedEntities");
+var noImplementationEp = EpFactory.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.NotImplementedEntities");
 Assert.Throws<NotImplementedException>(() => noImplementationEp.GetSingleton<IInterfaceModel>());
 ```
 
@@ -107,7 +107,7 @@ var conf = "<EP><Singletons xmlns:epns=\"EntityProvider.Tests\"><epns:Type>IInte
 
              // Singleton entities are always the same object
             var singletonObject = _ep.GetSingleton<IInterfaceModel>();
-            var singletonSame = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf).New<IInterfaceModel>();
+            var singletonSame = EpFactory.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf).New<IInterfaceModel>();
             {
                 var singletonObjectIndifferentScope = _ep.New<IInterfaceModel>();
 
@@ -121,19 +121,19 @@ var conf = "<EP><Singletons xmlns:epns=\"EntityProvider.Tests\"><epns:Type>IInte
             }
 
             // EntityProviders must return different singletons from different namespaces
-            var otherEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.New", conf);
+            var otherEp = EpFactory.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.New", conf);
 
             var singletonObjectNew = otherEp.New<IInterfaceModel>();
 
             Assert.NotEqual(singletonObject, singletonObjectNew);
 
             // Entity providers cannot provide Singletons from Namespaces where there is no imlementation
-            var noImplementationEp = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.NotImplementedEntities", conf);
+            var noImplementationEp = EpFactory.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests.NotImplementedEntities", conf);
             Assert.Throws<NotImplementedException>(() => noImplementationEp.New<IInterfaceModel>());
 ```
 ```
 var conf = "<EP xmlns:epns=\"EntityProvider.Tests\"><epns:Singleton value=\"IInterfaceModelX\"/></EP>";
-            var aProvider = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
+            var aProvider = EpFactory.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
             Assert.Throws<TypeAccessException>(() => aProvider.GetSingleton<IInterfaceModel>());
 ```
 
@@ -143,12 +143,12 @@ By providing a strong mapping of the types you'd be able to keep more than one i
 ```
 
 var conf = "<EP><StrongMaps><Map implementation=\"EntityProvider.Tests.ImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
-var Ep = EP.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
+var Ep = EpFactory.GetProvider("EntityProvider.Tests.dll", "EntityProvider.Tests", conf);
 ```
 ### Full featured conf xml
 ```
 var conf = "<EP xmlns:epns=\"EntityProvider.Tests\" dll=\"EntityProvider.Tests.dll\"><StrongMaps><Map implementation=\"OtherImplementedModel\">EntityProvider.Tests.IInterfaceModel</Map></StrongMaps></EP>";
-var Ep = EP.GetProvider(conf);
+var Ep = EpFactory.GetProvider(conf);
 var impl = Ep.New<IInterfaceModel>();
 Assert.Equal("EntityProvider.Tests.OtherImplementedModel", impl.SomeProp1);
 ```
