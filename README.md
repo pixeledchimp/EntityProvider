@@ -1,5 +1,5 @@
 # EntityProvider
-A Dependency injection Helper tool
+A Dependency invesion Helper tool
 
 
 ## 1. Conventions:
